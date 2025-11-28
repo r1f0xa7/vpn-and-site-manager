@@ -1,0 +1,29 @@
+/* -----------------------------------------------------
+   THEME D — Dark + Pink Accent
+----------------------------------------------------- */
+
+body.theme-pink {
+
+  /* Dark base like WG */
+  --bg-main: #141218;
+  --bg-panel: #1c1a22;
+  --bg-panel-soft: #24212c;
+
+  --border-soft: #3a3547;
+  --border-strong: #564f6b;
+
+  --text-main: #e25eab;
+  --text-soft: #ffffff;
+  --text-muted: #9a8fb5;
+
+  /* Keep status colours sensible */
+  --green: #00c853;
+  --red: #ff5252;
+  --yellow: #ffeb3b;
+
+  /* Pink accent for highlights */
+  --accent: #ff4081;
+
+  --table-alt: #181520;
+  --shadow-panel: 0 10px 30px rgba(0,0,0,0.55);
+}

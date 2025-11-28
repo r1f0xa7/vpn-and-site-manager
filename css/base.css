@@ -1,0 +1,297 @@
+/* ---------------------------------------------
+   GLOBAL RESET
+--------------------------------------------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* ---------------------------------------------
+     GLOBAL VARIABLES (DEFAULT — overridden by themes)
+  --------------------------------------------- */
+
+:root {
+  /* Backgrounds */
+  --bg-main: #121212;
+  --bg-panel: #1d1d1d;
+  --bg-panel-soft: #242424;
+
+  /* Borders */
+  --border-soft: #333;
+  --border-strong: #444;
+
+  /* Text colours */
+  --text-main: #f5f5f5;
+  --text-soft: #bbbbbb;
+  --text-muted: #888888;
+
+  /* Status colours */
+  --green: #00c853;
+  --red: #ff5252;
+  --yellow: #ffca28;
+
+  /* UI */
+  --accent: #909090;
+
+  /* Fonts */
+  --font-size: 14px;
+  --font-small: 12px;
+}
+
+/* ---------------------------------------------
+     UTILITY CLASSES
+  --------------------------------------------- */
+
+.hidden {
+  display: none !important;
+}
+
+.flex {
+  display: flex;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.gap-12 {
+  gap: 12px;
+}
+
+.mono {
+  font-family: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* ---------------------------------------------
+     PAGE ROOT
+  --------------------------------------------- */
+.view-root {
+  padding: 20px;
+  min-height: calc(100vh - 60px);
+}
+
+/* ---------------------------------------------
+     BLOKS / PANELS / TITLES
+  --------------------------------------------- */
+
+.block {
+  margin-bottom: 28px;
+}
+
+.block-title {
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-soft);
+  margin-bottom: 12px;
+}
+
+.block-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* ---------------------------------------------
+     BUTTONS
+  --------------------------------------------- */
+
+.icon-btn {
+  background: var(--bg-panel-soft);
+  color: var(--text-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 2px;
+  width: 28px;
+  height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+.btn-primary {
+  background: var(--green);
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* Secondary text button (for Cancel, etc.) */
+.btn-secondary {
+  background: var(--bg-panel-soft);
+  color: var(--text-soft);
+  border: 1px solid var(--border-soft);
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+
+/* Danger red button (Delete, destructive actions) */
+.btn-danger {
+  background: var(--red);
+  color: #000;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* ---------------------------------------------
+     TOP BAR
+  --------------------------------------------- */
+
+.topbar {
+  height: 60px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--text-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.logo-text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.topnav {
+  display: flex;
+  gap: 12px;
+}
+
+.topnav-link {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-soft);
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+
+.topnav-link.active {
+  color: var(--green);
+  border-bottom: 2px solid var(--green);
+}
+
+/* ---------------------------------------------
+     TABLE GENERAL STYLES
+  --------------------------------------------- */
+
+.table-wrapper {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead {
+  background: var(--bg-panel-soft);
+}
+
+th,
+td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+th {
+  font-weight: 500;
+  color: var(--text-soft);
+}
+
+tbody tr:nth-child(even) {
+  background: #181818;
+}
+
+/* ---------------------------------------------
+     THEME SWITCH BUTTON
+  --------------------------------------------- */
+
+.theme-toggle-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  padding: 6px 10px;
+  border-radius: 2px;
+  background: var(--text-main);
+  color: var(--bg-main);
+  border: 1px solid var(--border-soft);
+  cursor: pointer;
+  font-size: 12px;
+}

@@ -1,0 +1,101 @@
+/* ----------------------------------------------------
+   TABLES — Refinements & Consistent Styling
+---------------------------------------------------- */
+
+.table-wrapper {
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead {
+  background: var(--bg-panel-soft);
+}
+
+th,
+td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  font-weight: 500;
+  color: var(--text-soft);
+  font-size: 12px;
+  text-transform: none;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--table-alt, #181818);
+}
+
+tbody tr:hover {
+  background: #202020;
+}
+
+/* Checkbox column (for peers / bulk actions) */
+.table-checkbox-col {
+  width: 32px;
+  text-align: center;
+}
+
+/* Small helper for 'actions' column */
+.table-actions-col {
+  width: 90px;
+}
+
+/* Footer / pagination region (optional for later use) */
+
+.table-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-top: none;
+  font-size: 12px;
+}
+
+.pagination {
+  display: flex;
+  gap: 4px;
+}
+
+.page-btn {
+  border-radius: 2px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel-soft);
+  color: var(--text-soft);
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.page-btn.active {
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+.elements-select {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.elements-select select {
+  background: var(--bg-panel-soft);
+  border: 1px solid var(--border-soft);
+  color: var(--text-main);
+  font-size: 12px;
+  padding: 2px 4px;
+}

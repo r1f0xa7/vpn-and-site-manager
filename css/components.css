@@ -1,0 +1,602 @@
+/* ----------------------------------------------------
+   COMPONENTS: Modals, Toasts, Chips, Status, Searchbox
+---------------------------------------------------- */
+
+/* ============= STATUS DOTS & CHIPS ============= */
+
+.status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.status-dot.green {
+  background: var(--green);
+}
+
+.status-dot.red {
+  background: var(--red);
+}
+
+.status-dot.yellow {
+  background: var(--yellow);
+}
+
+.status-text {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 2px;
+  background: var(--bg-panel-soft);
+  border: 1px solid var(--border-soft);
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+.badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: var(--bg-panel-soft);
+  color: var(--text-soft);
+}
+
+/* ============= SEARCH BOX ============= */
+
+.search-box {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel-soft);
+}
+
+.search-box input[type="search"] {
+  border: none;
+  background: transparent;
+  padding: 6px 8px;
+  color: var(--text-main);
+  font-size: 13px;
+  min-width: 200px;
+  outline: none;
+}
+
+.search-box input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-box .search-btn {
+  border-left: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  width: 30px;
+}
+
+/* ----------------------------------------------------
+     MODALS
+  ---------------------------------------------------- */
+
+/* Backdrop container */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal-backdrop.hidden {
+  display: none;
+}
+
+/* Base modal box - styling variant depends on body class */
+.modal {
+  max-width: 560px;
+  width: 100%;
+  padding: 12px 14px 14px;
+}
+
+/* WG-STYLE MODAL (flat, minimal, like original portal) */
+body.modal-style-wg .modal {
+  background: var(--bg-panel);
+  border-radius: 2px;
+  border: 1px solid var(--border-strong);
+  box-shadow: none;
+}
+
+/* MODERN MODAL (slight radius, subtle shadow) */
+body.modal-style-modern .modal {
+  background: var(--bg-panel);
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.55);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.modal-title {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.modal-close-btn {
+  border-radius: 2px;
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-soft);
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  border-color: var(--border-strong);
+  color: var(--text-main);
+}
+
+/* Modal body & actions */
+.modal-body {
+  font-size: 13px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* ----------------------------------------------------
+     TOAST NOTIFICATIONS
+  ---------------------------------------------------- */
+
+.toast {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  min-width: 240px;
+  max-width: 360px;
+  padding: 8px 12px;
+  border-radius: 3px;
+  font-size: 12px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-panel);
+  color: var(--text-main);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  transform: translateY(-12px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 220;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.toast-success {
+  border-left: 3px solid var(--green);
+}
+
+.toast-error {
+  border-left: 3px solid var(--red);
+}
+
+.toast-info {
+  border-left: 3px solid var(--accent);
+}
+
+/* ----------------------------------------------------
+     SMALL LABELS / TAGS
+  ---------------------------------------------------- */
+
+.tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: var(--bg-panel-soft);
+  border: 1px solid var(--border-soft);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+
+
+
+/* Simple progress bars used on dashboard */
+.progress-bar {
+  background: var(--bg-panel-soft);
+  border-radius: 2px;
+  height: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+
+.progress-small {
+  height: 4px;
+}
+
+.progress-inner {
+  height: 100%;
+  background: var(--green);
+}
+
+.progress-inner-alt {
+  background: var(--accent);
+}
+
+/* Attention list text */
+.attention-text {
+  color: var(--red);
+  font-weight: 500;
+}
+
+
+
+/* ----------------------------------------------------------
+   ALERT STRIP
+---------------------------------------------------------- */
+
+.alert-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border-radius: 2px;
+  font-size: 11px;
+  align-items: center;
+}
+
+.alert-strip-ok {
+  background: rgba(0, 128, 0, 0.1);
+  border: 1px solid rgba(0, 128, 0, 0.5);
+}
+
+.alert-strip-warn {
+  background: rgba(128, 0, 0, 0.12);
+  border: 1px solid rgba(255, 0, 0, 0.6);
+}
+
+.alert-pill {
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.alert-pill-ok {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.alert-pill-critical {
+  border-color: var(--red);
+  color: var(--red);
+  font-weight: 600;
+}
+
+/* ----------------------------------------------------------
+   GLOBAL SEARCH
+---------------------------------------------------------- */
+
+.global-search-wrapper {
+  position: relative;
+  max-width: 520px;
+}
+
+.global-search-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  color: var(--text-main);
+}
+
+.global-search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.global-search-results {
+  position: absolute;
+  top: 30px;
+  left: 0;
+  right: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.global-search-results.hidden {
+  display: none;
+}
+
+.search-result-item {
+  padding: 6px 8px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: var(--bg-panel-soft);
+}
+
+.search-result-main {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.search-result-type {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.search-result-label {
+  font-size: 12px;
+  color: var(--text-main);
+}
+
+.search-result-sub {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+.search-result-empty {
+  padding: 6px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ----------------------------------------------------------
+   KPI CARDS
+---------------------------------------------------------- */
+
+.kpi-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+  padding: 10px 12px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+}
+
+.kpi-main {
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.kpi-value {
+  font-size: 24px;
+}
+
+.kpi-icon {
+  font-size: 18px;
+  opacity: 0.7;
+}
+
+/* ----------------------------------------------------------
+   PANELS / ATTENTION / ACTIVITY
+---------------------------------------------------------- */
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 3px;
+}
+
+.panel-header {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.panel-title {
+  font-size: 12px;
+  color: var(--text-soft);
+  text-transform: uppercase;
+}
+
+.panel-body {
+  padding: 8px 10px;
+}
+
+.panel-body-scroll {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.panel-row-small {
+  font-size: 11px;
+  margin-bottom: 8px;
+  color: var(--text-soft);
+}
+
+.panel-row {
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.panel-row-label {
+  margin-bottom: 2px;
+  color: var(--text-soft);
+}
+
+.panel-row-help {
+  margin-top: 2px;
+  color: var(--text-muted);
+}
+
+.panel-row-two {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  margin-bottom: 6px;
+}
+
+.panel-row-sep {
+  border-top: 1px solid var(--border-soft);
+  margin: 8px 0;
+}
+
+.panel-metric {
+  font-size: 20px;
+  color: var(--text-main);
+}
+
+.panel-empty {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.tag {
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  font-size: 11px;
+}
+
+.tag-muted {
+  color: var(--text-muted);
+}
+
+.attention-item {
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: var(--red);
+}
+
+/* IP usage rows */
+
+.ip-usage-row {
+  margin-bottom: 6px;
+}
+
+.ip-usage-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.ip-usage-meta {
+  color: var(--text-soft);
+}
+
+.progress-bar {
+  background: var(--bg-panel-soft);
+  border-radius: 2px;
+  height: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+}
+
+.progress-small {
+  height: 4px;
+}
+
+.progress-inner {
+  height: 100%;
+  background: var(--green);
+}
+
+.progress-inner-alt {
+  background: var(--accent);
+}
+
+.progress-inner-danger {
+  background: var(--red);
+}
+
+/* Activity rows */
+
+.activity-row {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.activity-row:last-child {
+  border-bottom: none;
+}
+
+.activity-main {
+  margin-bottom: 2px;
+}
+
+.activity-router {
+  color: var(--text-main);
+}
+
+.activity-site {
+  color: var(--text-main);
+}
+
+.activity-arrow {
+  color: var(--text-soft);
+  margin: 0 4px;
+}
+
+.activity-meta {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Quick actions */
+
+.qa-tile {
+  text-align: left;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  padding: 8px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.qa-tile:hover {
+  border-color: var(--border-strong);
+}
+
+.qa-title {
+  font-size: 13px;
+  color: var(--text-main);
+  margin-bottom: 2px;
+}
+
+.qa-desc {
+  font-size: 11px;
+  color: var(--text-soft);
+}

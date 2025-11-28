@@ -1,0 +1,31 @@
+/* -----------------------------------------------------
+   THEME C — Light (White UI)
+----------------------------------------------------- */
+
+body.theme-light {
+
+  /* Backgrounds */
+  --bg-main: #f3f3f3;
+  --bg-panel: #ffffff;
+  --bg-panel-soft: #f0f0f0;
+
+  /* Borders */
+  --border-soft: #d0d0d0;
+  --border-strong: #b5b5b5;
+
+  /* Text */
+  --text-main: #111111;
+  --text-soft: #444444;
+  --text-muted: #777777;
+
+  /* Status colours */
+  --green: #2e7d32;
+  --red: #c62828;
+  --yellow: #f9a825;
+
+  /* Accent */
+  --accent: #1976d2;
+
+  --table-alt: #f7f7f7;
+  --shadow-panel: 0 6px 18px rgba(0,0,0,0.08);
+}

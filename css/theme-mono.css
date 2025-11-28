@@ -1,0 +1,35 @@
+/* -----------------------------------------------------
+   THEME B — STRICT MONOCHROME + Red/Green/Yellow
+   Only uses: black, white, greys, red, green, yellow
+----------------------------------------------------- */
+
+body.theme-mono {
+
+   /* Backgrounds */
+   --bg-main: #000000;
+   --bg-panel: #111111;
+   --bg-panel-soft: #181818;
+
+   /* Borders */
+   --border-soft: #333333;
+   --border-strong: #555555;
+
+   /* Text colors */
+   --text-main: #ffffff;
+   --text-soft: #bfbfbf;
+   --text-muted: #7a7a7a;
+
+   /* Allowed colors */
+   --green: #00ff00;
+   --red: #ff0000;
+   --yellow: #ffff00;
+
+   /* UI accents */
+   --accent: #aaaaaa;
+
+   /* Table alt background */
+   --table-alt: #0d0d0d;
+
+   /* Shadows disabled */
+   --shadow-panel: none;
+}

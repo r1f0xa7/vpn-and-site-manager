@@ -1,0 +1,262 @@
+/* ------------------------------------------------------------
+   Page Header + Toggle
+------------------------------------------------------------ */
+
+.interfaces-header-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .interfaces-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .interfaces-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .view-toggle-btn {
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border-soft);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  .view-toggle-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  
+  /* ------------------------------------------------------------
+     TABLE VIEW
+  ------------------------------------------------------------ */
+  
+  .interfaces-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  
+  .interfaces-table th,
+  .interfaces-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  
+  .interfaces-table tr:hover {
+    background: var(--bg-panel-soft);
+    cursor: pointer;
+  }
+  
+  .iface-action {
+    padding: 4px 8px;
+    font-size: 11px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .iface-action:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+  
+  /* ------------------------------------------------------------
+     HEALTH BADGES
+  ------------------------------------------------------------ */
+  
+  .iface-health {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: bold;
+  }
+  
+  .health-good {
+    background: var(--green);
+  }
+  
+  .health-warn {
+    background: var(--yellow);
+    color: #000;
+  }
+  
+  .health-bad {
+    background: var(--red);
+  }
+  
+  /* ------------------------------------------------------------
+     GRID VIEW
+  ------------------------------------------------------------ */
+  
+  .interfaces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    padding: 10px;
+  }
+  
+  .iface-grid-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px;
+    transition: 0.15s;
+  }
+  
+  .iface-grid-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  
+  .iface-grid-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  
+  .iface-grid-name {
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  .iface-grid-btn {
+    margin-top: 10px;
+    width: 100%;
+    padding: 6px 0;
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  
+  /* ------------------------------------------------------------
+     DRAWER PANEL
+  ------------------------------------------------------------ */
+  
+  .iface-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    height: 100vh;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-soft);
+    padding: 18px;
+    overflow-y: auto;
+    transition: transform 0.25s ease;
+    z-index: 900;
+  }
+  
+  .iface-drawer.hidden {
+    transform: translateX(110%);
+  }
+  
+  .iface-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .iface-drawer-title {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .iface-drawer-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  
+  .iface-drawer-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text);
+  }
+  
+  .iface-drawer-section {
+    margin-top: 20px;
+  }
+  
+  .iface-sec-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  
+  .iface-summary-grid,
+  .iface-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    font-size: 13px;
+    gap: 8px;
+  }
+  
+  .iface-key-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  
+  .iface-peer-card {
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 10px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  
+  .iface-empty {
+    padding: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  
+  /* ------------------------------------------------------------
+     CONFIG PREVIEW
+  ------------------------------------------------------------ */
+  
+  .config-preview {
+    font-size: 12px;
+    background: var(--bg-panel-soft);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-soft);
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  
+  /* ------------------------------------------------------------
+     BUTTON OVERRIDES
+  ------------------------------------------------------------ */
+  
+  .btn-small {
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+  
+  .btn-danger {
+    background: var(--red);
+    color: #fff;
+  }
+  
