@@ -1,0 +1,292 @@
+/* ------------------------------------------------------------
+   SEARCH & FILTER BAR
+------------------------------------------------------------ */
+
+.peers-header-block {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .peers-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .peers-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  
+  .search-input {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    padding: 6px 10px;
+    border-radius: 6px;
+    color: var(--text);
+    width: 180px;
+  }
+  
+  .filter-select {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    padding: 6px;
+    border-radius: 6px;
+    color: var(--text);
+  }
+  
+  /* ------------------------------------------------------------
+     PEERS TABLE
+  ------------------------------------------------------------ */
+  
+  .peers-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  
+  .peers-table th,
+  .peers-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  
+  .peers-table th {
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-size: 11px;
+  }
+  
+  .peers-table tr:hover {
+    background: var(--bg-panel-soft);
+    cursor: pointer;
+  }
+  
+  .peer-action {
+    padding: 4px 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    color: var(--text);
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+  .peer-action:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+  
+  /* ------------------------------------------------------------
+     STATUS BADGES
+  ------------------------------------------------------------ */
+  
+  .peer-status {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    font-weight: bold;
+    color: #fff;
+  }
+  
+  .status-online {
+    background: var(--green);
+  }
+  
+  .status-stale {
+    background: var(--yellow);
+    color: #000;
+  }
+  
+  .status-offline {
+    background: var(--red);
+  }
+  
+  /* ------------------------------------------------------------
+     PEER DRAWER PANEL
+  ------------------------------------------------------------ */
+  
+  .peer-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    height: 100vh;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-soft);
+    padding: 18px;
+    overflow-y: auto;
+    transition: transform 0.25s ease;
+    z-index: 900;
+  }
+  
+  .peer-drawer.hidden {
+    transform: translateX(110%);
+  }
+  
+  .peer-drawer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .peer-drawer-title {
+    font-size: 20px;
+    font-weight: bold;
+  }
+  
+  .peer-drawer-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  
+  .peer-drawer-close {
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--text);
+  }
+  
+  .peer-drawer-section {
+    margin-top: 20px;
+  }
+  
+  .peer-sec-title {
+    font-size: 13px;
+    font-weight: bold;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  
+  .peer-summary-grid,
+  .peer-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 6px;
+    font-size: 13px;
+  }
+  
+  .peer-key-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  
+  /* ------------------------------------------------------------
+     ROUTING / ALLOWED IP LIST
+  ------------------------------------------------------------ */
+  
+  .peer-allowed-list {
+    padding-left: 16px;
+    margin: 8px 0;
+  }
+  
+  .peer-allowed-list li {
+    padding: 2px 0;
+  }
+  
+  /* empty indicators */
+  .peer-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 6px 0;
+  }
+  
+  /* ------------------------------------------------------------
+     ACL BADGES (Engineer access control)
+  ------------------------------------------------------------ */
+  
+  .peer-acl-sites {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  
+  .peer-acl-badge {
+    background: var(--accent);
+    color: #fff;
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+  
+  .peer-acl-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  .peer-acl-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  
+  /* ------------------------------------------------------------
+     ACTION BUTTONS
+  ------------------------------------------------------------ */
+  
+  .peer-actions-row {
+    display: flex;
+    gap: 10px;
+  }
+  
+  /* small sizing */
+  .btn-small {
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+  
+  /* ------------------------------------------------------------
+     QR MODAL LAYOUT
+  ------------------------------------------------------------ */
+  
+  .peer-qr-layout {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 12px;
+  }
+  
+  .peer-qr-box {
+    text-align: center;
+  }
+  
+  .peer-qr-placeholder {
+    width: 160px;
+    height: 160px;
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  
+  .peer-qr-note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  
+  /* ------------------------------------------------------------
+     CONFIG PREVIEW
+  ------------------------------------------------------------ */
+  
+  .config-preview {
+    background: var(--bg-panel-soft);
+    border: 1px solid var(--border-soft);
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    max-height: 380px;
+  }
+  

@@ -299,6 +299,43 @@ const state = loadLS("wg_state", null) || {
     }
   ],
 
+  /* ---------------------------------------------------------
+   WIREGUARD PEERS (Router + Engineer in unified system)
+--------------------------------------------------------- */
+
+  peers: [
+    // Example test peer (remove later)
+    {
+      id: "peer_test1",
+      type: "router",         // router | engineer
+      name: "RUT-TST-001",    // router name or engineer device name
+
+      interfaceId: "wg0",     // interface assigned to this peer
+      userId: null,           // only for engineer
+      routerId: "router001",  // only for router
+      siteId: "site001",      // only for router peers
+
+      vpnIP: "10.128.0.10/32",   // /32 tunnel IP
+      allocatedAt: "2025-01-01T12:00:00Z",
+
+      privateKey: "base64-private",
+      publicKey: "base64-public",
+
+      allowedIPs: [],         // router peers: NAT subnet, engineer peers: ACL-based
+      aclSites: [],           // engineer only
+
+      stats: {
+        rxBytes: 0,
+        txBytes: 0,
+        lastHandshake: null,
+        state: "offline"      // online | offline | stale
+      },
+
+      createdAt: "2025-01-01T12:00:00Z",
+      updatedAt: "2025-01-01T12:00:00Z"
+    }
+  ],
+
 
 
 };
@@ -788,6 +825,226 @@ const DB = {
       objectId: interfaceId
     });
   },
+
+
+  /* ---------------------------------------------------------
+   PEER MANAGEMENT — CREATE / UPDATE / DELETE / READ
+  --------------------------------------------------------- */
+
+  getPeers() {
+    return state.peers || [];
+  },
+
+  getPeer(id) {
+    return state.peers.find(p => p.id === id);
+  },
+
+  addPeer(data) {
+    const id = uid("peer");
+    const privateKey = generatePrivateKey();
+    const publicKey = generatePublicKey(privateKey);
+
+    const peer = {
+      id,
+      type: data.type,                 // router | engineer
+      name: data.name || id,
+
+      interfaceId: data.interfaceId,
+      userId: data.userId || null,
+      routerId: data.routerId || null,
+      siteId: data.siteId || null,
+
+      vpnIP: data.vpnIP,               // already allocated /32
+      allocatedAt: new Date().toISOString(),
+
+      privateKey,
+      publicKey,
+
+      allowedIPs: data.allowedIPs || [],
+      aclSites: data.aclSites || [],   // engineer only
+
+      stats: {
+        rxBytes: 0,
+        txBytes: 0,
+        lastHandshake: null,
+        state: "offline"
+      },
+
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    state.peers.push(peer);
+
+    // Link into interface
+    DB.addInterfacePeer(data.interfaceId, id);
+
+    saveState();
+
+    DB.addLog({
+      category: "peer",
+      severity: "info",
+      message: `Peer created: ${peer.name}`,
+      objectType: "peer",
+      objectId: id
+    });
+
+    return peer;
+  },
+
+  updatePeer(id, updates) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    Object.assign(peer, updates, {
+      updatedAt: new Date().toISOString()
+    });
+
+    saveState();
+
+    DB.addLog({
+      category: "peer",
+      severity: "info",
+      message: `Peer updated: ${peer.name}`,
+      objectType: "peer",
+      objectId: id
+    });
+  },
+
+  deletePeer(id) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    // Remove from interface
+    if (peer.interfaceId) {
+      DB.removeInterfacePeer(peer.interfaceId, id);
+    }
+
+    state.peers = state.peers.filter(p => p.id !== id);
+    saveState();
+
+    DB.addLog({
+      category: "peer",
+      severity: "warn",
+      message: `Peer deleted: ${peer.name}`,
+      objectType: "peer",
+      objectId: id
+    });
+  },
+
+
+  rotatePeerKey(id) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    const privateKey = generatePrivateKey();
+    const publicKey = generatePublicKey(privateKey);
+
+    peer.privateKey = privateKey;
+    peer.publicKey = publicKey;
+    peer.updatedAt = new Date().toISOString();
+
+    saveState();
+
+    DB.addLog({
+      category: "peer",
+      severity: "info",
+      message: `Peer key rotated: ${peer.name}`,
+      objectType: "peer",
+      objectId: id
+    });
+  },
+
+
+  setPeerOnline(id) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    peer.stats.state = "online";
+    peer.stats.lastHandshake = new Date().toISOString();
+    saveState();
+  },
+
+  setPeerStale(id) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    peer.stats.state = "stale";
+    saveState();
+  },
+
+  setPeerOffline(id) {
+    const peer = this.getPeer(id);
+    if (!peer) return;
+
+    peer.stats.state = "offline";
+    saveState();
+  }
+  ,
+
+
+  addPeerAllowedSite(peerId, siteId) {
+    const peer = this.getPeer(peerId);
+    if (!peer || peer.type !== "engineer") return;
+
+    if (!peer.aclSites.includes(siteId)) {
+      peer.aclSites.push(siteId);
+    }
+
+    peer.updatedAt = new Date().toISOString();
+    saveState();
+  },
+
+  removePeerAllowedSite(peerId, siteId) {
+    const peer = this.getPeer(peerId);
+    if (!peer) return;
+
+    peer.aclSites = peer.aclSites.filter(s => s !== siteId);
+    peer.updatedAt = new Date().toISOString();
+    saveState();
+  },
+
+
+  searchPeers(query) {
+    query = query.toLowerCase();
+    return state.peers.filter(p =>
+      (p.name || "").toLowerCase().includes(query) ||
+      (p.id || "").toLowerCase().includes(query)
+    );
+  },
+
+  filterPeersByType(type) {
+    return state.peers.filter(p => p.type === type);
+  },
+
+  filterPeersByState(state) {
+    return state.peers.filter(p => p.stats.state === state);
+  },
+
+  generatePeerConfig(id) {
+    const peer = this.getPeer(id);
+    if (!peer) return "";
+
+    // Optional: find interface for comments / endpoint
+    const iface = this.getInterface ? this.getInterface(peer.interfaceId) : null;
+
+    const endpoint = "vpn.example.com:51820"; // placeholder, for now
+    const allowed = "0.0.0.0/0";              // you can change this later
+
+    return `
+  [Interface]
+  PrivateKey = ${peer.privateKey}
+  Address = ${peer.vpnIP}
+  
+  [Peer]
+  # Server ${iface ? iface.name : ""}
+  PublicKey = SERVER_PUBLIC_KEY
+  Endpoint = ${endpoint}
+  AllowedIPs = ${allowed}
+  PersistentKeepalive = 25
+    `.trim();
+  },
+
 
 
 

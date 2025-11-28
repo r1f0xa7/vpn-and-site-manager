@@ -286,7 +286,7 @@ function openInterfaceDrawer(interfaceId) {
           <div class="iface-peer-card">
             <div><strong>${p.name || p.serial || p.id}</strong></div>
             <div class="mono">${p.vpnIP || "-"}</div>
-            <button class="btn-small" onclick="openPeerDrawer('${p.id}')">View</button>
+            <button class="btn-small" onclick="interfaceOpenPeerDrawer('${p.id}')">View</button>
           </div>
         `).join("")
       }
@@ -299,7 +299,7 @@ function openInterfaceDrawer(interfaceId) {
           <div class="iface-peer-card">
             <div><strong>${p.deviceName || p.name || p.id}</strong></div>
             <div class="mono">${p.vpnIP || "-"}</div>
-            <button class="btn-small" onclick="openPeerDrawer('${p.id}')">View</button>
+            <button class="btn-small" onclick="interfaceOpenPeerDrawer('${p.id}')">View</button>
           </div>
         `).join("")
       }
@@ -555,6 +555,6 @@ function openInterfaceConfigModal(id) {
 }
 
 
-function openPeerDrawer(peerId) {
+function interfaceOpenPeerDrawer(peerId) {
   navigateTo("peers"); // Or your peer view page
 }
