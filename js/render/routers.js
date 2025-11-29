@@ -1,177 +1,496 @@
-/* -----------------------------------------------------------
-   RENDER: ROUTERS (Teltonika Manager)
------------------------------------------------------------ */
-
 console.log("[RENDER] Loaded routers.js");
 
 function renderRouters(root) {
-  const perms = getCurrentRolePermissions();
-  const canEdit = perms.canEditRouters;
-
   const routers = DB.getRouters();
-  const sites = DB.getSites();
-  const assignments = state.site_router_assignments;
+  const interfaces = DB.getInterfaces();
+  const sites = DB.getSites ? DB.getSites() : [];
 
-  const block = document.createElement("section");
-  block.className = "block";
+  root.innerHTML = "";
 
-  const header = document.createElement("div");
-  header.className = "block-header";
+  /* HEADER */
+  const header = document.createElement("section");
+  header.className = "block routers-header-block";
 
-  const title = document.createElement("h1");
-  title.className = "block-title";
-  title.textContent = "ROUTER DEVICES";
+  header.innerHTML = `
+    <div class="routers-header">
+      <h1 class="block-title">ROUTERS</h1>
 
-  header.appendChild(title);
+      <div class="routers-actions">
+        <input id="routerSearchInput" class="search-input" placeholder="Search routers...">
+        <button id="btnAddRouter" class="btn-primary">+ Add Router</button>
+      </div>
+    </div>
+  `;
+  root.appendChild(header);
 
-  if (canEdit) {
-    const btn = document.createElement("button");
-    btn.className = "btn-primary";
-    btn.textContent = "Add Router";
-    btn.onclick = () => openRouterEditor(null);
-    header.appendChild(btn);
-  }
+  header.querySelector("#btnAddRouter").onclick = () => openRouterCreateModal();
 
-  block.appendChild(header);
+  /* TABLE */
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "table-wrapper";
+  const section = document.createElement("section");
+  section.className = "block";
 
-  wrapper.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Serial</th>
-          <th>Model</th>
-          <th>Tunnel IP</th>
-          <th>Assigned Site</th>
-          <th>Note</th>
-          ${canEdit ? "<th>Actions</th>" : ""}
-        </tr>
-      </thead>
-      <tbody>
-        ${routers.map(r => {
-          const assign = assignments.find(a => a.routerDeviceId === r.id && a.active);
-          const site = assign ? sites.find(s => s.id === assign.siteId) : null;
-
-          return `
-            <tr>
-              <td>${r.serial}</td>
-              <td>${r.model}</td>
-              <td><span class="mono">${r.tunnelIp}</span></td>
-              <td>${site ? site.name : "-"}</td>
-              <td>${r.note || ""}</td>
-              ${
-                canEdit
-                  ? `
-                    <td>
-                      <button class="icon-btn" data-edit-router="${r.id}">✎</button>
-                      <button class="icon-btn" data-del-router="${r.id}">🗑</button>
-                    </td>
-                  `
-                  : ""
-              }
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    </table>
+  section.innerHTML = `
+    <div class="table-wrapper routers-table-wrapper">
+      <table class="routers-table">
+        <thead>
+          <tr>
+            <th style="width:100px;">ID</th>
+            <th>Name</th>
+            <th style="width:120px;">Serial</th>
+            <th style="width:100px;">Model</th>
+            <th style="width:130px;">Tunnel IP</th>
+            <th style="width:120px;">Site</th>
+            <th style="width:110px;">Interface</th>
+            <th style="width:90px;">Status</th>
+            <th style="width:110px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="routersTableBody"></tbody>
+      </table>
+    </div>
   `;
 
-  block.appendChild(wrapper);
-  root.appendChild(block);
+  root.appendChild(section);
 
-  // Edit routers
-  document.querySelectorAll("[data-edit-router]").forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.dataset.editRouter;
-      const r = routers.find(x => x.id === id);
-      openRouterEditor(r);
-    };
-  });
+  function paint() {
+    const q = document.getElementById("routerSearchInput").value.trim().toLowerCase();
+    let list = DB.getRouters();
 
-  // Delete routers
-  document.querySelectorAll("[data-del-router]").forEach(btn => {
-    btn.onclick = () => {
-      const id = btn.dataset.delRouter;
-      Modal.confirm("Delete this router device?", () => {
-        DB.deleteRouter(id);
-        showToast("Router deleted", "success");
-        navigateTo("routers");
-      });
-    };
+    if (q) {
+      list = list.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.serial.toLowerCase().includes(q) ||
+        (r.tunnelIP || "").toLowerCase().includes(q)
+      );
+    }
+
+    const tbody = section.querySelector("#routersTableBody");
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">No routers found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(r => {
+      const site = sites.find(s => s.id === r.siteId);
+      const iface = interfaces.find(i => i.id === r.interfaceId);
+      return `
+        <tr class="router-row" data-id="${r.id}">
+          <td class="mono">${r.id}</td>
+          <td>${r.name}</td>
+          <td>${r.serial}</td>
+          <td>${r.model}</td>
+          <td class="mono">${r.tunnelIP}</td>
+          <td>${site ? site.name : "-"}</td>
+          <td>${iface ? iface.name : "-"}</td>
+          <td>${r.stats.online ? "🟢(online)" : "🔴(offline)"}</td>
+          <td>
+            <button class="router-action" data-act="view" data-id="${r.id}">View</button>
+            <button class="router-action" data-act="config" data-id="${r.id}">Config</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    tbody.querySelectorAll(".router-action").forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        if (act === "view") openRouterDrawer(id);
+        if (act === "config") openRouterConfigModal(id);
+      };
+    });
+
+    tbody.querySelectorAll(".router-row").forEach(row => {
+      row.onclick = e => {
+        if (e.target.classList.contains("router-action")) return;
+        openRouterDrawer(row.dataset.id);
+      };
+    });
+  }
+
+  document.getElementById("routerSearchInput").oninput = paint;
+  paint();
+}
+
+
+/* ------------------------------------------------------------
+   ROUTER DRAWER (right panel)
+------------------------------------------------------------ */
+
+function openRouterDrawer(routerId) {
+  const router = DB.getRouter(routerId);
+  if (!router) return;
+
+  const drawer = document.getElementById("routerDrawer");
+  drawer.classList.remove("hidden");
+  drawer.innerHTML = "";
+
+  const sites = DB.getSites ? DB.getSites() : [];
+  const interfaces = DB.getInterfaces();
+  const peers = DB.getPeers();
+
+  const site = sites.find(s => s.id === router.siteId);
+  const iface = interfaces.find(i => i.id === router.interfaceId);
+  const peer = peers.find(p => p.routerId === router.id);
+
+  const statusLabel = router.stats.online ? "ONLINE" : "OFFLINE";
+  const statusClass = router.stats.online ? "router-status-online" : "router-status-offline";
+
+  const lastSeen = router.stats.lastSeen ? new Date(router.stats.lastSeen).toLocaleString() : "-";
+
+  drawer.innerHTML = `
+    <div class="router-drawer-header">
+      <div>
+        <div class="router-drawer-title">${router.name}</div>
+        <div class="router-drawer-sub mono">${router.id}</div>
+      </div>
+      <button class="router-drawer-close" onclick="closeRouterDrawer()">✕</button>
+    </div>
+
+    <div class="router-drawer-section">
+      <div class="router-sec-title">SUMMARY</div>
+      <div class="router-summary-grid">
+        <div><strong>Serial:</strong> ${router.serial || "-"}</div>
+        <div><strong>Model:</strong> ${router.model || "-"}</div>
+        <div><strong>Tunnel IP:</strong> <span class="mono">${router.tunnelIP || "-"}</span></div>
+        <div><strong>Interface:</strong> ${iface ? iface.name : "-"}</div>
+        <div><strong>Site:</strong> ${site ? site.name : "-"}</div>
+        <div><strong>Status:</strong> <span class="${statusClass}">${statusLabel}</span></div>
+        <div><strong>Last Seen:</strong> ${lastSeen}</div>
+        <div><strong>Created:</strong> ${formatDate(router.createdAt)}</div>
+      </div>
+    </div>
+
+    <div class="router-drawer-section">
+      <div class="router-sec-title">IDENTIFIERS</div>
+      <div class="router-summary-grid">
+        <div><strong>IMEI:</strong> ${router.imei || "-"}</div>
+        <div><strong>MAC:</strong> ${router.mac || "-"}</div>
+      </div>
+    </div>
+
+    <div class="router-drawer-section">
+      <div class="router-sec-title">WIREGUARD PEER</div>
+      ${
+        peer
+          ? `
+            <div class="router-peer-block">
+              <div><strong>Peer ID:</strong> <span class="mono">${peer.id}</span></div>
+              <div><strong>VPN IP:</strong> <span class="mono">${peer.vpnIP}</span></div>
+              <div><strong>Peer State:</strong> ${peer.stats.state}</div>
+            </div>
+          `
+          : `<div class="router-empty">No WireGuard peer linked (unexpected).</div>`
+      }
+    </div>
+
+    <div class="router-drawer-section">
+      <div class="router-sec-title">STATS</div>
+      <div class="router-summary-grid">
+        <div><strong>RX:</strong> ${router.stats.rxBytes} bytes</div>
+        <div><strong>TX:</strong> ${router.stats.txBytes} bytes</div>
+      </div>
+    </div>
+
+    <div class="router-drawer-section">
+      <div class="router-sec-title">ACTIONS</div>
+      <div class="router-actions-row">
+        <button class="btn-secondary" id="btnRouterEdit">Edit Router</button>
+        <button class="btn-secondary" id="btnRouterConfig">WG Config</button>
+        <button class="btn-danger" id="btnRouterDelete">Delete</button>
+      </div>
+    </div>
+  `;
+
+  drawer.querySelector("#btnRouterEdit").onclick = () => openRouterEditModal(router.id);
+  drawer.querySelector("#btnRouterConfig").onclick = () => openRouterConfigModal(router.id);
+  drawer.querySelector("#btnRouterDelete").onclick = () => openRouterDeleteModal(router.id);
+}
+
+function closeRouterDrawer() {
+  const drawer = document.getElementById("routerDrawer");
+  if (!drawer) return;
+  drawer.classList.add("hidden");
+}
+
+function formatDate(d) {
+  if (!d) return "-";
+  return new Date(d).toLocaleString();
+}
+
+
+/* ------------------------------------------------------------
+   ROUTER WIREGUARD CONFIG MODAL
+------------------------------------------------------------ */
+
+function openRouterConfigModal(routerId) {
+  const router = DB.getRouter(routerId);
+  if (!router) return;
+
+  const peers = DB.getPeers();
+  const peer = peers.find(p => p.routerId === router.id);
+  const iface = DB.getInterface(router.interfaceId);
+
+  const peerConfig = peer ? DB.generatePeerConfig(peer.id) : "# No peer found for this router";
+  const ifaceName = iface ? iface.name : "wg0";
+
+  const config = `
+# Router: ${router.name} (${router.model})
+# Tunnel IP: ${router.tunnelIP}
+
+${peerConfig}
+  `.trim();
+
+  Modal.open({
+    title: `Router WG Config: ${router.name}`,
+    size: "large",
+    content: `
+      <pre class="config-preview mono">${config.replace(/</g, "&lt;")}</pre>
+    `,
+    actions: [
+      {
+        label: "Copy",
+        className: "btn-secondary",
+        onClick: () => {
+          navigator.clipboard.writeText(config);
+          showToast("Router config copied", "success");
+        }
+      },
+      {
+        label: "Close",
+        className: "btn-primary",
+        onClick: Modal.close
+      }
+    ]
   });
 }
 
-/* -----------------------------------------------------------
-   MODAL: Add/Edit Router
------------------------------------------------------------ */
-function openRouterEditor(router) {
-  const isEdit = !!router;
 
-  const html = `
-    <form id="routerForm" class="form">
-      <div class="form-field">
-        <label>Serial</label>
-        <input id="routerSerial" type="text"
-               value="${router?.serial || ""}">
-      </div>
+/* ------------------------------------------------------------
+   ADD ROUTER MODAL
+------------------------------------------------------------ */
 
-      <div class="form-field">
-        <label>Model</label>
-        <input id="routerModel" type="text"
-               value="${router?.model || "RUTX11"}">
-      </div>
+function openRouterCreateModal() {
+  const interfaces = DB.getInterfaces();
+  const sites = DB.getSites ? DB.getSites() : [];
 
-      <div class="form-field">
-        <label>Tunnel IP (/32)</label>
-        <input id="routerTunnelIp" type="text"
-               value="${router?.tunnelIp || ""}">
-        <div class="form-help">
-          Must be a permanent /32 from the router pool (10.240.0.0/12).
-        </div>
-      </div>
-
-      <div class="form-field">
-        <label>Note</label>
-        <textarea id="routerNote">${router?.note || ""}</textarea>
-      </div>
-    </form>
-  `;
+  const ifaceOptions = interfaces.map(i => `<option value="${i.id}">${i.name}</option>`).join("");
+  const siteOptions = sites.map(s => `<option value="${s.id}">${s.name}</option>`).join("");
 
   Modal.open({
-    title: isEdit ? "Edit Router Device" : "Add Router Device",
-    content: html,
+    title: "Add Router",
+    size: "medium",
+    content: `
+      <div class="form-group">
+        <label>Name</label>
+        <input id="routerName" class="form-input" placeholder="RUTX11-0001">
+      </div>
+
+      <div class="form-group">
+        <label>Serial</label>
+        <input id="routerSerial" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>Model</label>
+        <input id="routerModel" class="form-input" placeholder="RUTX11 / RUT240">
+      </div>
+
+      <div class="form-group">
+        <label>IMEI</label>
+        <input id="routerIMEI" class="form-input">
+      </div>
+
+      <div class="form-group">
+        <label>MAC</label>
+        <input id="routerMAC" class="form-input" placeholder="00:11:22:33:44:55">
+      </div>
+
+      <div class="form-group">
+        <label>Interface</label>
+        <select id="routerInterfaceSel" class="form-input">
+          ${ifaceOptions}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Site</label>
+        <select id="routerSiteSel" class="form-input">
+          <option value="">(unassigned)</option>
+          ${siteOptions}
+        </select>
+      </div>
+    `,
     actions: [
       {
         label: "Cancel",
-        className: "icon-btn",
-        onClick: () => Modal.close()
+        className: "btn-secondary",
+        onClick: Modal.close
       },
       {
-        label: isEdit ? "Save" : "Create",
+        label: "Create Router",
         className: "btn-primary",
         onClick: () => {
+          const name = document.getElementById("routerName").value.trim();
           const serial = document.getElementById("routerSerial").value.trim();
           const model = document.getElementById("routerModel").value.trim();
-          const tunnelIp = document.getElementById("routerTunnelIp").value.trim();
-          const note = document.getElementById("routerNote").value.trim();
+          const imei = document.getElementById("routerIMEI").value.trim();
+          const mac = document.getElementById("routerMAC").value.trim();
+          const interfaceId = document.getElementById("routerInterfaceSel").value;
+          const siteId = document.getElementById("routerSiteSel").value || null;
 
-          if (!serial || !model || !tunnelIp) {
-            showToast("Please fill all fields", "error");
+          if (!name) {
+            showToast("Router name is required", "error");
             return;
           }
 
-          DB.upsertRouter({
-            id: router?.id,
+          DB.addRouter({
+            name,
             serial,
             model,
-            tunnelIp,
-            note
+            imei,
+            mac,
+            interfaceId,
+            siteId
           });
 
-          showToast(isEdit ? "Router updated" : "Router created", "success");
           Modal.close();
+          navigateTo("routers");
+        }
+      }
+    ]
+  });
+}
+
+/* ------------------------------------------------------------
+   EDIT ROUTER MODAL
+------------------------------------------------------------ */
+
+function openRouterEditModal(routerId) {
+  const router = DB.getRouter(routerId);
+  if (!router) return;
+
+  const interfaces = DB.getInterfaces();
+  const sites = DB.getSites ? DB.getSites() : [];
+
+  const ifaceOptions = interfaces
+    .map(i => `<option value="${i.id}" ${i.id === router.interfaceId ? "selected" : ""}>${i.name}</option>`)
+    .join("");
+  const siteOptions = sites
+    .map(s => `<option value="${s.id}" ${s.id === router.siteId ? "selected" : ""}>${s.name}</option>`)
+    .join("");
+
+  Modal.open({
+    title: `Edit Router: ${router.name}`,
+    size: "medium",
+    content: `
+      <div class="form-group">
+        <label>Name</label>
+        <input id="editRouterName" class="form-input" value="${router.name}">
+      </div>
+
+      <div class="form-group">
+        <label>Serial</label>
+        <input id="editRouterSerial" class="form-input" value="${router.serial}">
+      </div>
+
+      <div class="form-group">
+        <label>Model</label>
+        <input id="editRouterModel" class="form-input" value="${router.model}">
+      </div>
+
+      <div class="form-group">
+        <label>IMEI</label>
+        <input id="editRouterIMEI" class="form-input" value="${router.imei}">
+      </div>
+
+      <div class="form-group">
+        <label>MAC</label>
+        <input id="editRouterMAC" class="form-input" value="${router.mac}">
+      </div>
+
+      <div class="form-group">
+        <label>Interface</label>
+        <select id="editRouterInterfaceSel" class="form-input">
+          ${ifaceOptions}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Site</label>
+        <select id="editRouterSiteSel" class="form-input">
+          <option value="">(unassigned)</option>
+          ${siteOptions}
+        </select>
+      </div>
+    `,
+    actions: [
+      {
+        label: "Cancel",
+        className: "btn-secondary",
+        onClick: Modal.close
+      },
+      {
+        label: "Save Changes",
+        className: "btn-primary",
+        onClick: () => {
+          const name = document.getElementById("editRouterName").value.trim();
+          const serial = document.getElementById("editRouterSerial").value.trim();
+          const model = document.getElementById("editRouterModel").value.trim();
+          const imei = document.getElementById("editRouterIMEI").value.trim();
+          const mac = document.getElementById("editRouterMAC").value.trim();
+          const interfaceId = document.getElementById("editRouterInterfaceSel").value;
+          const siteId = document.getElementById("editRouterSiteSel").value || null;
+
+          DB.updateRouter(routerId, {
+            name,
+            serial,
+            model,
+            imei,
+            mac,
+            interfaceId,
+            siteId
+          });
+
+          Modal.close();
+          navigateTo("routers");
+        }
+      }
+    ]
+  });
+}
+
+/* ------------------------------------------------------------
+   DELETE ROUTER MODAL
+------------------------------------------------------------ */
+
+function openRouterDeleteModal(routerId) {
+  const router = DB.getRouter(routerId);
+  if (!router) return;
+
+  Modal.open({
+    title: "Delete Router",
+    size: "small",
+    content: `
+      <p>Are you sure you want to delete router <strong>${router.name}</strong>?</p>
+      <p>This will also delete its WireGuard peer.</p>
+    `,
+    actions: [
+      {
+        label: "Cancel",
+        className: "btn-secondary",
+        onClick: Modal.close
+      },
+      {
+        label: "Delete",
+        className: "btn-danger",
+        onClick: () => {
+          DB.deleteRouter(routerId);
+          Modal.close();
+          closeRouterDrawer();
           navigateTo("routers");
         }
       }

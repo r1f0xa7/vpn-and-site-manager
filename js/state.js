@@ -98,6 +98,38 @@ const state = loadLS("wg_state", null) || {
     }
   ],
 
+  /* ---------------------------------------------------------
+   ROUTERS (PHYSICAL TELTONIKA DEVICES)
+--------------------------------------------------------- */
+
+routers: [
+  // sample router (remove later)
+  // {
+  //   id: "router001",
+  //   name: "RUTX11-001",
+  //   serial: "1234567890",
+  //   model: "RUTX11",
+  //   imei: "352000000000001",
+  //   mac: "00:11:22:33:44:55",
+  //
+  //   tunnelIP: "10.240.1.10/32",
+  //   interfaceId: "wg0",
+  //
+  //   siteId: "site001",
+  //
+  //   stats: {
+  //     online: false,
+  //     lastSeen: null,
+  //     rxBytes: 0,
+  //     txBytes: 0
+  //   },
+  //
+  //   createdAt: "2025-01-01T12:00:00Z",
+  //   updatedAt: "2025-01-01T12:00:00Z"
+  // }
+],
+
+
   /* ----------------------------------------------
      SITE ↔ ROUTER ASSIGNMENTS
   ---------------------------------------------- */
@@ -177,66 +209,50 @@ const state = loadLS("wg_state", null) || {
     }
   ],
 
-  /* ----------------------------------------------
-     IP POOLS
-  ---------------------------------------------- */
-  ip_pools: [
-    {
-      id: "pool_router",
-      type: "router",
-      name: "Router Tunnel Pool",
-      cidr: ["10.240.0.0/12"],
-      reserved: []
+
+  /* ---------------------------------------------------------
+   IPAM SYSTEM
+--------------------------------------------------------- */
+
+  ipPools: {
+    routers: {
+      name: "Router Tunnel IPs",
+      cidrs: ["10.240.0.0/12"]
     },
-    {
-      id: "pool_camera",
-      type: "camera",
-      name: "Camera NAT Pools",
-      cidr: ["10.0.0.0/12", "10.16.0.0/12", "10.32.0.0/11"],
-      reserved: ["10.18.0.0/16", "10.110.0.0/20"]
+    engineers: {
+      name: "Engineer VPN IPs",
+      cidrs: ["10.128.0.0/13"]
     },
-    {
-      id: "pool_engineer",
-      type: "engineer",
-      name: "Engineer VPN Pool",
-      cidr: ["10.128.0.0/13"],
-      reserved: []
+    sites: {
+      name: "Site Camera NAT Ranges",
+      cidrs: [
+        "10.0.0.0/12",
+        "10.16.0.0/12",
+        "10.32.0.0/11"
+      ],
+      reserved: [
+        "10.18.0.0/16",
+        "10.110.0.0/20"
+      ]
     },
-    {
-      id: "pool_core",
-      type: "infra",
-      name: "Core Infrastructure Pool",
-      cidr: ["10.200.0.0/16"],
-      reserved: []
+    infra: {
+      name: "Infrastructure Services",
+      cidrs: ["10.200.0.0/16"]
     }
+  },
+
+  // Every allocation ever made stays here permanently
+  ipAllocations: [
+    // example
+    // {
+    //   id: "site001",
+    //   type: "site",
+    //   cidr: "10.16.50.0/24",
+    //   pool: "sites",
+    //   allocatedAt: "2025-01-02T12:00:00Z"
+    // }
   ],
 
-  /* ----------------------------------------------
-     IP ALLOCATIONS
-  ---------------------------------------------- */
-  ip_allocations: [
-    {
-      id: "ipa1",
-      poolId: "pool_router",
-      objectType: "router_device",
-      objectId: "rdev1",
-      cidr: "10.240.0.10/32"
-    },
-    {
-      id: "ipa2",
-      poolId: "pool_camera",
-      objectType: "site",
-      objectId: "site1",
-      cidr: "10.10.50.0/24"
-    },
-    {
-      id: "ipa3",
-      poolId: "pool_engineer",
-      objectType: "engineer_profile",
-      objectId: "prof1",
-      cidr: "10.128.0.10/32"
-    }
-  ],
 
   /* ----------------------------------------------
      SETTINGS
@@ -570,15 +586,259 @@ const DB = {
     saveState();
   },
 
-  /* IP Allocations */
-  getAllocations() { return state.ip_allocations; },
-  upsertAllocation(data) {
-    if (!data.id) data.id = uid("ipa");
-    const ex = findItem(state.ip_allocations, data.id);
-    if (ex) Object.assign(ex, data);
-    else state.ip_allocations.push(data);
-    saveState();
-  },
+  /* ---------------------------------------------------------
+   IPAM: CORE HELPERS
+--------------------------------------------------------- */
+
+ /* IP Allocations */
+ getAllocations() { return state.ip_allocations; },
+ upsertAllocation(data) {
+   if (!data.id) data.id = uid("ipa");
+   const ex = findItem(state.ip_allocations, data.id);
+   if (ex) Object.assign(ex, data);
+   else state.ip_allocations.push(data);
+   saveState();
+ },
+
+getIPAllocations() {
+  return state.ipAllocations || [];
+},
+
+getAllocFor(id, type) {
+  return state.ipAllocations.find(x => x.id === id && x.type === type);
+},
+
+reserveCIDR(id, type, pool, cidr) {
+  state.ipAllocations.push({
+    id, type, pool, cidr, allocatedAt: new Date().toISOString()
+  });
+  saveState();
+},
+
+/* ---------------------------------------------------------
+   AUTO-ALLOCATE ROUTER VPN IP (/32)
+--------------------------------------------------------- */
+
+allocateRouterIP(routerId) {
+  // return existing
+  const existing = DB.getAllocFor(routerId, "router");
+  if (existing) return existing.cidr;
+
+  // router pool = 10.240.0.0/12
+  const pool = state.ipPools.routers.cidrs[0];
+
+  // generate /32: 10.240.x.y
+  let ip;
+  while (true) {
+    const a = 240;                  // fixed: 10.240.x.x
+    const b = Math.floor(Math.random() * 256);
+    const c = Math.floor(Math.random() * 256);
+
+    ip = `10.${a}.${b}.${c}/32`;
+
+    if (!state.ipAllocations.find(x => x.cidr === ip))
+      break;
+  }
+
+  DB.reserveCIDR(routerId, "router", "routers", ip);
+  return ip;
+},
+
+/* ---------------------------------------------------------
+   AUTO-ALLOCATE ENGINEER VPN IP (/32)
+--------------------------------------------------------- */
+
+allocateEngineerIP(peerId) {
+  const existing = DB.getAllocFor(peerId, "engineer");
+  if (existing) return existing.cidr;
+
+  // engineer pool: 10.128.0.0/13
+  // Range: 10.128.0.0 – 10.135.255.255
+  let ip;
+
+  while (true) {
+    const A = 128 + Math.floor(Math.random() * 8); // 128–135
+    const B = Math.floor(Math.random() * 256);
+    const C = Math.floor(Math.random() * 256);
+
+    ip = `10.${A}.${B}.${C}/32`;
+
+    if (!state.ipAllocations.find(x => x.cidr === ip))
+      break;
+  }
+
+  DB.reserveCIDR(peerId, "engineer", "engineers", ip);
+  return ip;
+},
+
+/* ---------------------------------------------------------
+   AUTO-ALLOCATE SITE NAT SUBNET (/24)
+--------------------------------------------------------- */
+
+allocateSiteSubnet(siteId) {
+  const existing = DB.getAllocFor(siteId, "site");
+  if (existing) return existing.cidr;
+
+  const pools = state.ipPools.sites.cidrs;
+  const reserved = state.ipPools.sites.reserved;
+
+  let result;
+
+  while (true) {
+    // Choose random pool (10.0.0.0/12, etc.)
+    const base = pools[Math.floor(Math.random() * pools.length)];
+
+    // base "10.X.0.0/12"
+    const octets = base.split("/")[0].split(".");
+    const A = Number(octets[1]); // base second octet
+
+    const second = A + Math.floor(Math.random() * Math.pow(2, (12 - 8))); // within /12 boundary
+
+    const third = Math.floor(Math.random() * 256);
+    const subnet = `10.${second}.${third}.0/24`;
+
+    // skip reserved blocks
+    if (reserved.some(r => cidrWithin(subnet, r))) continue;
+
+    // skip if already used
+    if (state.ipAllocations.find(x => x.cidr === subnet)) continue;
+
+    result = subnet;
+    break;
+  }
+
+  DB.reserveCIDR(siteId, "site", "sites", result);
+  return result;
+},
+
+
+/* ---------------------------------------------------------
+   ROUTER MANAGEMENT
+--------------------------------------------------------- */
+
+getRouters() {
+  return state.routers || [];
+},
+
+getRouter(id) {
+  return state.routers.find(r => r.id === id);
+},
+
+addRouter(data) {
+  const id = uid("router");
+
+  // permanent tunnel IP from IPAM system
+  const tunnelIP = DB.allocateRouterIP(id);
+
+  const router = {
+    id,
+    name: data.name || id,
+    serial: data.serial || "",
+    model: data.model || "",
+    imei: data.imei || "",
+    mac: data.mac || "",
+
+    tunnelIP,
+    interfaceId: data.interfaceId || "wg0",
+
+    siteId: data.siteId || null,
+
+    stats: {
+      online: false,
+      lastSeen: null,
+      rxBytes: 0,
+      txBytes: 0
+    },
+
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  state.routers.push(router);
+  saveState();
+
+  // Create router peer
+  DB.addPeer({
+    type: "router",
+    name: router.name,
+    interfaceId: router.interfaceId,
+    vpnIP: tunnelIP,
+    routerId: router.id,
+    siteId: router.siteId,
+    allowedIPs: [],  // backend will inject site NAT subnet later
+    aclSites: []     // no ACL for routers
+  });
+
+  DB.addLog({
+    category: "router",
+    severity: "info",
+    message: `Router added: ${router.name}`,
+    objectType: "router",
+    objectId: id
+  });
+
+  return router;
+},
+
+updateRouter(id, updates) {
+  const router = this.getRouter(id);
+  if (!router) return;
+
+  Object.assign(router, updates, {
+    updatedAt: new Date().toISOString()
+  });
+
+  saveState();
+
+  DB.addLog({
+    category: "router",
+    severity: "info",
+    message: `Router updated: ${router.name}`,
+    objectType: "router",
+    objectId: id
+  });
+},
+
+deleteRouter(id) {
+  const router = this.getRouter(id);
+  if (!router) return;
+
+  // delete its peer
+  const peer = DB.getPeers().find(p => p.routerId === id);
+  if (peer) DB.deletePeer(peer.id);
+
+  state.routers = state.routers.filter(r => r.id !== id);
+  saveState();
+
+  DB.addLog({
+    category: "router",
+    severity: "warn",
+    message: `Router deleted: ${router.name}`,
+    objectType: "router",
+    objectId: id
+  });
+},
+
+/* ---------------------------------------------------------
+   Router status simulation
+--------------------------------------------------------- */
+
+setRouterOnline(id) {
+  const r = this.getRouter(id);
+  if (!r) return;
+  r.stats.online = true;
+  r.stats.lastSeen = new Date().toISOString();
+  saveState();
+},
+
+setRouterOffline(id) {
+  const r = this.getRouter(id);
+  if (!r) return;
+  r.stats.online = false;
+  saveState();
+},
+
+
 
   /* Peers */
   getPeers() { return state.wireguard_peers; },
@@ -1060,5 +1320,22 @@ function generatePublicKey(privateKey) {
   return btoa("pub-" + privateKey);
 }
 
+
+function cidrWithin(child, parent) {
+  const [c, cBits] = child.split("/");
+  const [p, pBits] = parent.split("/");
+
+  const cMask = ~((1 << (32 - cBits)) - 1);
+  const pMask = ~((1 << (32 - pBits)) - 1);
+
+  const cNum = ipToInt(c);
+  const pNum = ipToInt(p);
+
+  return (cNum & pMask) === (pNum & pMask);
+}
+
+function ipToInt(ip) {
+  return ip.split('.').reduce((a, b) => (a << 8) + Number(b), 0);
+}
 
 console.log("[STATE] State initialized", state);

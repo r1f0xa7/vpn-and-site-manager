@@ -1,0 +1,55 @@
+.ipam-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 16px;
+    padding: 10px 0;
+  }
+  
+  .ipam-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 14px;
+  }
+  
+  .ipam-card-title {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
+  
+  .ipam-card-sub {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  
+  .ipam-cidrs div,
+  .ipam-reserved div {
+    padding: 2px 0;
+  }
+  
+  .ipam-alloc-list {
+    margin-top: 6px;
+  }
+  
+  .ipam-alloc-row {
+    display: flex;
+    justify-content: space-between;
+    background: var(--bg-panel-soft);
+    padding: 6px 8px;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  
+  .ipam-alloc-tag {
+    color: var(--accent);
+  }
+  
+  .ipam-empty {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+  
