@@ -1,0 +1,72 @@
+.profiles-header {
+    margin-bottom: 10px;
+  }
+  
+  .profiles-subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  
+  .profiles-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+  }
+  
+  .profiles-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+  
+  .profiles-page-size {
+    margin-left: auto;
+  }
+  
+  .profiles-table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 12px;
+  }
+  
+  .profiles-pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .profiles-page-btn {
+    color: var(--text-main);
+    min-width: 26px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-main);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .profiles-page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  
+  .profiles-empty {
+    text-align: center;
+    padding: 16px 0;
+    color: var(--text-muted);
+  }
+  
+  .profiles-actions {
+    display: flex;
+    gap: 6px;
+  }
+  

@@ -1,55 +1,157 @@
-.ipam-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-    gap: 16px;
-    padding: 10px 0;
-  }
-  
-  .ipam-card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-soft);
-    border-radius: 8px;
-    padding: 14px;
-  }
-  
-  .ipam-card-title {
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 6px;
-  }
-  
-  .ipam-card-sub {
-    margin-top: 10px;
-    font-size: 12px;
-    color: var(--text-muted);
-  }
-  
-  .ipam-cidrs div,
-  .ipam-reserved div {
-    padding: 2px 0;
-  }
-  
-  .ipam-alloc-list {
-    margin-top: 6px;
-  }
-  
-  .ipam-alloc-row {
-    display: flex;
-    justify-content: space-between;
-    background: var(--bg-panel-soft);
-    padding: 6px 8px;
-    border: 1px solid var(--border-soft);
-    border-radius: 6px;
-    margin-bottom: 6px;
-    font-size: 12px;
-  }
-  
-  .ipam-alloc-tag {
-    color: var(--accent);
-  }
-  
-  .ipam-empty {
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-  
+/* SUMMARY CARDS */
+
+.ipam-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  padding: 10px 0;
+}
+
+.ipam-summary-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.ipam-summary-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.ipam-summary-cidrs {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ipam-summary-reserved {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.ipam-summary-stats {
+  margin-top: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.ipam-summary-count {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.ipam-summary-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* TABLE HEADER & FILTERS */
+
+.ipam-table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.ipam-table-title {
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+.ipam-table-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.ipam-table-filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* TABLE */
+
+.ipam-table-wrapper {
+  border-radius: 8px;
+  border: 1px solid var(--border-soft);
+  max-height: calc(100vh - 240px);   /* so it never grows endless with 700 rows */
+  overflow-y: auto;
+}
+
+.ipam-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.ipam-table th,
+.ipam-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.ipam-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ipam-table tr:nth-child(even) {
+  background: var(--bg-panel-soft);
+}
+
+.ipam-empty {
+  text-align: center;
+  padding: 8px 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+
+.ipam-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px solid var(--border-soft);
+  font-size: 12px;
+}
+
+.ipam-page-size label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ipam-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ipam-page-info,
+.ipam-page-current {
+  color: var(--text-soft);
+}
+
+.ipam-page-btn {
+  color: var(--text-main);
+  min-width: 26px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-main);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.ipam-page-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

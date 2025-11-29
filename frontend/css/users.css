@@ -1,0 +1,89 @@
+.users-header {
+    margin-bottom: 10px;
+  }
+  
+  .users-subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  
+  .users-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+  }
+  
+  .users-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+  
+  .users-page-size {
+    margin-left: auto;
+  }
+  
+  .users-table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 12px;
+  }
+  
+  .users-pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .users-page-btn {
+    min-width: 26px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-main);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .users-page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  
+  .users-empty {
+    text-align: center;
+    padding: 16px 0;
+    color: var(--text-muted);
+  }
+  
+  .user-status {
+    padding: 3px 8px;
+    font-size: 11px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  
+  .user-status-active {
+    background: rgba(0, 200, 83, 0.18);
+    color: #6dff9a;
+  }
+  
+  .user-status-disabled {
+    background: rgba(255, 82, 82, 0.18);
+    color: #ffb0b0;
+  }
+  
+  .users-actions {
+    display: flex;
+    gap: 6px;
+  }
+  

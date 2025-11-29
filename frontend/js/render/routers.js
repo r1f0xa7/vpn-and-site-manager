@@ -1,9 +1,13 @@
 console.log("[RENDER] Loaded routers.js");
 
 function renderRouters(root) {
-  const routers = DB.getRouters();
   const interfaces = DB.getInterfaces();
   const sites = DB.getSites ? DB.getSites() : [];
+
+  // Pagination state (per render)
+  let routersCurrentPage = 1;
+  let routersPageSize = 20;
+  let routersTotalPages = 1;
 
   root.innerHTML = "";
 
@@ -26,7 +30,6 @@ function renderRouters(root) {
   header.querySelector("#btnAddRouter").onclick = () => openRouterCreateModal();
 
   /* TABLE */
-
   const section = document.createElement("section");
   section.className = "block";
 
@@ -49,50 +52,113 @@ function renderRouters(root) {
         <tbody id="routersTableBody"></tbody>
       </table>
     </div>
+
+    <!-- Table footer: page size + pagination controls -->
+    <div class="routers-table-footer">
+      <div class="routers-page-size">
+        <label>
+          Rows per page
+          <select id="routersPageSize" class="filter-select">
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </label>
+      </div>
+      <div class="routers-pagination" id="routersPagination"></div>
+    </div>
   `;
 
   root.appendChild(section);
 
+  const tbody = section.querySelector("#routersTableBody");
+  const searchInput = document.getElementById("routerSearchInput");
+  const pageSizeSelect = section.querySelector("#routersPageSize");
+  const paginationEl = section.querySelector("#routersPagination");
+
+  function renderPagination(total) {
+    const totalPages = Math.max(1, Math.ceil(total / routersPageSize));
+    routersTotalPages = totalPages;
+
+    if (total === 0) {
+      paginationEl.innerHTML = `<span class="routers-page-info">0 items</span>`;
+      return;
+    }
+
+    if (routersCurrentPage > totalPages) {
+      routersCurrentPage = totalPages;
+    }
+
+    const start = (routersCurrentPage - 1) * routersPageSize + 1;
+    const end = Math.min(total, routersCurrentPage * routersPageSize);
+
+    paginationEl.innerHTML = `
+      <span class="routers-page-info">${start}-${end} of ${total}</span>
+      <button class="routers-page-btn" data-page="prev" ${routersCurrentPage === 1 ? "disabled" : ""}>‹</button>
+      <span class="routers-page-current">Page ${routersCurrentPage} of ${totalPages}</span>
+      <button class="routers-page-btn" data-page="next" ${routersCurrentPage === totalPages ? "disabled" : ""}>›</button>
+    `;
+  }
+
   function paint() {
-    const q = document.getElementById("routerSearchInput").value.trim().toLowerCase();
+    const q = searchInput.value.trim().toLowerCase();
     let list = DB.getRouters();
 
     if (q) {
       list = list.filter(r =>
-        r.name.toLowerCase().includes(q) ||
-        r.serial.toLowerCase().includes(q) ||
+        (r.name || "").toLowerCase().includes(q) ||
+        (r.serial || "").toLowerCase().includes(q) ||
         (r.tunnelIP || "").toLowerCase().includes(q)
       );
     }
 
-    const tbody = section.querySelector("#routersTableBody");
+    // Optional: sort by name for stable ordering
+    list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
     if (!list.length) {
       tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);">No routers found.</td></tr>`;
+      renderPagination(0);
       return;
     }
 
-    tbody.innerHTML = list.map(r => {
+    const total = list.length;
+    const totalPages = Math.max(1, Math.ceil(total / routersPageSize));
+    if (routersCurrentPage > totalPages) routersCurrentPage = totalPages;
+
+    const startIndex = (routersCurrentPage - 1) * routersPageSize;
+    const pageItems = list.slice(startIndex, startIndex + routersPageSize);
+
+    tbody.innerHTML = pageItems.map(r => {
       const site = sites.find(s => s.id === r.siteId);
       const iface = interfaces.find(i => i.id === r.interfaceId);
+
+      const isOnline = r.stats && r.stats.online;
+      const statusHTML = isOnline
+        ? `<span class="status-badge status-online">● Online</span>`
+        : `<span class="status-badge status-offline">● Offline</span>`;
+
       return `
         <tr class="router-row" data-id="${r.id}">
           <td class="mono">${r.id}</td>
           <td>${r.name}</td>
-          <td>${r.serial}</td>
-          <td>${r.model}</td>
-          <td class="mono">${r.tunnelIP}</td>
+          <td>${r.serial || "-"}</td>
+          <td>${r.model || "-"}</td>
+          <td class="mono">${r.tunnelIP || "-"}</td>
           <td>${site ? site.name : "-"}</td>
           <td>${iface ? iface.name : "-"}</td>
-          <td>${r.stats.online ? "🟢(online)" : "🔴(offline)"}</td>
+          <td>${statusHTML}</td>
           <td>
-            <button class="router-action" data-act="view" data-id="${r.id}">View</button>
-            <button class="router-action" data-act="config" data-id="${r.id}">Config</button>
+            <div class="router-actions">
+              <button class="router-action-btn router-action" data-act="view" data-id="${r.id}">View</button>
+              <button class="router-action-btn router-action" data-act="config" data-id="${r.id}">Config</button>
+            </div>
           </td>
         </tr>
       `;
     }).join("");
 
+    // wire row actions
     tbody.querySelectorAll(".router-action").forEach(btn => {
       btn.onclick = e => {
         e.stopPropagation();
@@ -105,13 +171,41 @@ function renderRouters(root) {
 
     tbody.querySelectorAll(".router-row").forEach(row => {
       row.onclick = e => {
-        if (e.target.classList.contains("router-action")) return;
+        if (e.target.classList.contains("router-action") || e.target.closest(".router-actions")) return;
         openRouterDrawer(row.dataset.id);
       };
     });
+
+    renderPagination(total);
   }
 
-  document.getElementById("routerSearchInput").oninput = paint;
+  // Search → reset to page 1
+  searchInput.oninput = () => {
+    routersCurrentPage = 1;
+    paint();
+  };
+
+  // Page size change
+  pageSizeSelect.addEventListener("change", () => {
+    routersPageSize = parseInt(pageSizeSelect.value, 10) || 20;
+    routersCurrentPage = 1;
+    paint();
+  });
+
+  // Prev / Next buttons
+  paginationEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-page]");
+    if (!btn) return;
+    const action = btn.dataset.page;
+    if (action === "prev" && routersCurrentPage > 1) {
+      routersCurrentPage--;
+      paint();
+    } else if (action === "next" && routersCurrentPage < routersTotalPages) {
+      routersCurrentPage++;
+      paint();
+    }
+  });
+
   paint();
 }
 
@@ -365,6 +459,7 @@ function openRouterCreateModal() {
   });
 }
 
+
 /* ------------------------------------------------------------
    EDIT ROUTER MODAL
 ------------------------------------------------------------ */
@@ -462,6 +557,7 @@ function openRouterEditModal(routerId) {
     ]
   });
 }
+
 
 /* ------------------------------------------------------------
    DELETE ROUTER MODAL

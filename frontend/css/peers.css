@@ -290,3 +290,46 @@
     max-height: 380px;
   }
   
+
+  .peers-table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 12px;
+  }
+  
+  .peers-page-size label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .peers-pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .peers-page-info,
+  .peers-page-current {
+    color: var(--text-soft);
+  }
+  
+  .peers-page-btn {
+    min-width: 26px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-main);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .peers-page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  

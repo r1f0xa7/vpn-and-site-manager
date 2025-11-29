@@ -5,18 +5,23 @@ console.log("[RENDER] Loaded interfaces.js");
 ------------------------------------------------------------ */
 
 function renderInterfaces(root) {
+  root.innerHTML = "";
+
   const interfaces = DB.getInterfaces();
+  const peers = DB.getPeers ? DB.getPeers() : [];
 
-  // --------------------
-  // Header + action bar
-  // --------------------
-
+  // --------- header + actions ----------
   const header = document.createElement("section");
   header.className = "block interfaces-header-block";
 
   header.innerHTML = `
     <div class="interfaces-header">
-      <h1 class="block-title">WIREGUARD INTERFACES</h1>
+      <div>
+        <h1 class="block-title">WIREGUARD INTERFACES</h1>
+        <p class="text-muted interfaces-subtitle">
+          Core WireGuard endpoints that terminate tunnels for routers and engineers.
+        </p>
+      </div>
 
       <div class="interfaces-actions">
         <button class="btn-primary" id="btnAddInterface">+ Add Interface</button>
@@ -28,29 +33,53 @@ function renderInterfaces(root) {
       </div>
     </div>
   `;
-
   root.appendChild(header);
 
-  // Event: Add Interface
-  header.querySelector("#btnAddInterface").onclick = () => openInterfaceCreateModal();
+  header.querySelector("#btnAddInterface").onclick = () =>
+    openInterfaceCreateModal();
 
-  // -------------------------------------------------------------------
-  // Container where either TABLE VIEW or GRID VIEW will be inserted
-  // -------------------------------------------------------------------
+  // --------- summary cards -------------
+  const totalIfaces = interfaces.length;
+  const totalPeers = peers.length;
+  const onlinePeers = peers.filter(
+    p => p.stats && p.stats.state === "online"
+  ).length;
 
+  const summary = document.createElement("section");
+  summary.className = "block";
+
+  summary.innerHTML = `
+    <div class="interfaces-summary-grid">
+      <div class="interfaces-summary-card">
+        <div class="interfaces-summary-label">Interfaces</div>
+        <div class="interfaces-summary-value">${totalIfaces}</div>
+      </div>
+      <div class="interfaces-summary-card">
+        <div class="interfaces-summary-label">Total Peers</div>
+        <div class="interfaces-summary-value">${totalPeers}</div>
+      </div>
+      <div class="interfaces-summary-card">
+        <div class="interfaces-summary-label">Online Peers</div>
+        <div class="interfaces-summary-value interfaces-summary-value-green">
+          ${onlinePeers}
+        </div>
+      </div>
+    </div>
+  `;
+  root.appendChild(summary);
+
+  // --------- view container ------------
   const viewContainer = document.createElement("div");
   viewContainer.id = "interfacesViewContainer";
   root.appendChild(viewContainer);
 
-  // Default = TABLE VIEW
+  // default: table
   renderInterfacesTableView(viewContainer);
 
-  // Toggle buttons
   header.querySelector("#btnViewTable").onclick = () => {
     setActiveViewButton("btnViewTable");
     renderInterfacesTableView(viewContainer);
   };
-
   header.querySelector("#btnViewGrid").onclick = () => {
     setActiveViewButton("btnViewGrid");
     renderInterfacesGridView(viewContainer);
@@ -58,106 +87,267 @@ function renderInterfaces(root) {
 }
 
 /* ------------------------------------------------------------
-   Set active view (toggle button highlight)
+   Set active view toggle button
 ------------------------------------------------------------ */
 
 function setActiveViewButton(id) {
-  document.querySelectorAll(".view-toggle-btn").forEach(btn => btn.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+  document
+    .querySelectorAll(".view-toggle-btn")
+    .forEach(btn => btn.classList.remove("active"));
+  const el = document.getElementById(id);
+  if (el) el.classList.add("active");
 }
 
 /* ------------------------------------------------------------
-   TABLE VIEW
+   TABLE VIEW  (search + filter + pagination)
 ------------------------------------------------------------ */
 
 function renderInterfacesTableView(container) {
-  const interfaces = DB.getInterfaces();
   container.innerHTML = "";
 
-  const wrap = document.createElement("section");
-  wrap.className = "block";
+  // local UI state
+  let currentPage = 1;
+  let pageSize = 20;
+  let searchTerm = "";
+  let healthFilter = "";
 
-  wrap.innerHTML = `
+  const section = document.createElement("section");
+  section.className = "block";
+
+  section.innerHTML = `
+    <div class="interfaces-table-header">
+      <div class="interfaces-table-filters">
+        <div class="interfaces-filter-group">
+          <label>Search</label>
+          <input id="ifaceSearchInput" class="search-input"
+                 placeholder="Name / ID / port…">
+        </div>
+
+        <div class="interfaces-filter-group">
+          <label>Health</label>
+          <select id="ifaceHealthFilter" class="filter-select">
+            <option value="">All</option>
+            <option value="good">Good</option>
+            <option value="warn">Warn</option>
+            <option value="bad">Bad</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="interfaces-table-controls">
+        <label class="interfaces-page-size">
+          Rows per page
+          <select id="ifacePageSize" class="filter-select">
+            <option value="10">10</option>
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
     <div class="table-wrapper interfaces-table-wrapper">
       <table class="interfaces-table">
         <thead>
           <tr>
-            <th style="width: 60px;">ID</th>
+            <th style="width: 80px;">ID</th>
             <th>Name</th>
             <th style="width:120px;">Peers</th>
             <th style="width:120px;">Port</th>
-            <th style="width:100px;">Health</th>
-            <th style="width:110px;">Actions</th>
+            <th style="width:110px;">Health</th>
+            <th style="width:120px;">Actions</th>
           </tr>
         </thead>
         <tbody id="interfacesTableBody"></tbody>
       </table>
     </div>
+
+    <div class="interfaces-table-footer">
+      <div id="ifacePageInfo" class="interfaces-page-info"></div>
+      <div id="ifacePagination" class="interfaces-pagination"></div>
+    </div>
   `;
 
-  container.appendChild(wrap);
+  container.appendChild(section);
 
-  const tbody = wrap.querySelector("#interfacesTableBody");
+  const tbody = section.querySelector("#interfacesTableBody");
+  const searchInput = section.querySelector("#ifaceSearchInput");
+  const healthSelect = section.querySelector("#ifaceHealthFilter");
+  const pageSizeSelect = section.querySelector("#ifacePageSize");
+  const pageInfoEl = section.querySelector("#ifacePageInfo");
+  const paginationEl = section.querySelector("#ifacePagination");
 
-  if (interfaces.length === 0) {
-    tbody.innerHTML = `
-      <tr><td colspan="6" style="text-align:center;color:var(--text-muted);">No interfaces created yet.</td></tr>
-    `;
-    return;
+  function getFilteredList() {
+    let list = DB.getInterfaces() || [];
+
+    // search
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter(iface =>
+        (iface.name || "").toLowerCase().includes(q) ||
+        (iface.id || "").toLowerCase().includes(q) ||
+        String(iface.listenPort || "")
+          .toLowerCase()
+          .includes(q)
+      );
+    }
+
+    // health filter
+    if (healthFilter) {
+      list = list.filter(iface => {
+        const h = calculateInterfaceHealth(iface);
+        return h.class === `health-${healthFilter}`;
+      });
+    }
+
+    // sort by name
+    list.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    return list;
   }
 
-  tbody.innerHTML = interfaces
-    .map(iface => {
-      const health = calculateInterfaceHealth(iface);
-      return `
-        <tr class="iface-row" data-id="${iface.id}">
-          <td class="mono">${iface.id}</td>
-          <td>${iface.name}</td>
-          <td>${iface.peers.length}</td>
-          <td>${iface.listenPort}</td>
-          <td>
-            <span class="iface-health ${health.class}">${health.label}</span>
-          </td>
-          <td>
-            <button class="iface-action" data-act="view" data-id="${iface.id}">View</button>
-            <button class="iface-action" data-act="config" data-id="${iface.id}">Config</button>
+  function renderPagination(total) {
+    if (!total) {
+      pageInfoEl.textContent = "0 interfaces";
+      paginationEl.innerHTML = "";
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * pageSize + 1;
+    const end = Math.min(total, currentPage * pageSize);
+
+    pageInfoEl.textContent = `${start}-${end} of ${total} interfaces`;
+
+    paginationEl.innerHTML = `
+      <button class="iface-page-btn" data-page="prev"
+        ${currentPage === 1 ? "disabled" : ""}>‹</button>
+      <span class="iface-page-current">Page ${currentPage} of ${totalPages}</span>
+      <button class="iface-page-btn" data-page="next"
+        ${currentPage === totalPages ? "disabled" : ""}>›</button>
+    `;
+  }
+
+  function paintTable() {
+    const list = getFilteredList();
+
+    if (!list.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="iface-empty-row">
+            No interfaces found for current filters.
           </td>
         </tr>
       `;
-    })
-    .join("");
+      renderPagination(0);
+      return;
+    }
 
-  // ------------------------------
-  // Row + action handlers
-  // ------------------------------
-  tbody.querySelectorAll(".iface-action").forEach(btn => {
-    btn.onclick = e => {
-      const id = btn.dataset.id;
-      const act = btn.dataset.act;
+    const total = list.length;
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
 
-      if (act === "view") openInterfaceDrawer(id);
-      if (act === "config") openInterfaceConfigModal(id);
-    };
+    const startIndex = (currentPage - 1) * pageSize;
+    const pageItems = list.slice(startIndex, startIndex + pageSize);
+
+    tbody.innerHTML = pageItems
+      .map(iface => {
+        const health = calculateInterfaceHealth(iface);
+        const peerCount = (iface.peers || []).length;
+
+        return `
+          <tr class="iface-row" data-id="${iface.id}">
+            <td class="mono">${iface.id}</td>
+            <td>${iface.name}</td>
+            <td>${peerCount}</td>
+            <td class="mono">${iface.listenPort || "-"}</td>
+            <td>
+              <span class="iface-health ${health.class}">${health.label}</span>
+            </td>
+            <td>
+              <button class="iface-action" data-act="view" data-id="${iface.id}">View</button>
+              <button class="iface-action" data-act="config" data-id="${iface.id}">Config</button>
+            </td>
+          </tr>
+        `;
+      })
+      .join("");
+
+    // actions
+    tbody.querySelectorAll(".iface-action").forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        const id = btn.dataset.id;
+        const act = btn.dataset.act;
+        if (act === "view") openInterfaceDrawer(id);
+        if (act === "config") openInterfaceConfigModal(id);
+      };
+    });
+
+    // row click = open drawer
+    tbody.querySelectorAll(".iface-row").forEach(row => {
+      row.onclick = e => {
+        if (e.target.classList.contains("iface-action")) return;
+        openInterfaceDrawer(row.dataset.id);
+      };
+    });
+
+    renderPagination(total);
+  }
+
+  // events
+  searchInput.addEventListener("input", () => {
+    searchTerm = searchInput.value.trim();
+    currentPage = 1;
+    paintTable();
   });
 
-  // Clicking row (except buttons)
-  tbody.querySelectorAll(".iface-row").forEach(row => {
-    row.onclick = e => {
-      if (e.target.classList.contains("iface-action")) return; // ignore button clicks
-      openInterfaceDrawer(row.dataset.id);
-    };
+  healthSelect.addEventListener("change", () => {
+    healthFilter = healthSelect.value || "";
+    currentPage = 1;
+    paintTable();
   });
+
+  pageSizeSelect.addEventListener("change", () => {
+    pageSize = parseInt(pageSizeSelect.value, 10) || 20;
+    currentPage = 1;
+    paintTable();
+  });
+
+  paginationEl.addEventListener("click", e => {
+    const btn = e.target.closest("button[data-page]");
+    if (!btn) return;
+    const list = getFilteredList();
+    const totalPages = Math.max(1, Math.ceil(list.length / pageSize));
+
+    if (btn.dataset.page === "prev" && currentPage > 1) {
+      currentPage--;
+      paintTable();
+    } else if (
+      btn.dataset.page === "next" &&
+      currentPage < totalPages
+    ) {
+      currentPage++;
+      paintTable();
+    }
+  });
+
+  paintTable();
 }
 
 /* ------------------------------------------------------------
-   SIMPLE HEALTH CALCULATION (placeholder)
+   SIMPLE HEALTH CALCULATION
 ------------------------------------------------------------ */
 
 function calculateInterfaceHealth(iface) {
-  let score = 0;
+  const stats = iface.stats || {};
+  const peers = iface.peers || [];
 
-  if (iface.peers.length > 0) score += 40;
-  if (iface.stats.onlinePeers > 0) score += 40;
+  let score = 0;
+  if (peers.length > 0) score += 40;
+  if (stats.onlinePeers > 0) score += 40;
   if (iface.privateKey) score += 20;
 
   if (score >= 80) return { label: "GOOD", class: "health-good" };
@@ -166,30 +356,44 @@ function calculateInterfaceHealth(iface) {
 }
 
 /* ------------------------------------------------------------
-   GRID VIEW (Placeholder — Section B will finish it)
+   GRID VIEW
 ------------------------------------------------------------ */
 
 function renderInterfacesGridView(container) {
-  const interfaces = DB.getInterfaces();
+  const interfaces = DB.getInterfaces() || [];
   container.innerHTML = "";
 
   const wrap = document.createElement("section");
   wrap.className = "block";
+
+  if (!interfaces.length) {
+    wrap.innerHTML = `
+      <div class="interfaces-grid-empty">
+        No interfaces created yet.
+      </div>
+    `;
+    container.appendChild(wrap);
+    return;
+  }
 
   wrap.innerHTML = `
     <div class="interfaces-grid">
       ${interfaces
         .map(iface => {
           const health = calculateInterfaceHealth(iface);
+          const peerCount = (iface.peers || []).length;
           return `
             <div class="iface-grid-card" data-id="${iface.id}">
               <div class="iface-grid-header">
-                <div class="iface-grid-name">${iface.name}</div>
-                <div class="iface-health ${health.class}">${health.label}</div>
+                <div>
+                  <div class="iface-grid-name">${iface.name}</div>
+                  <div class="iface-grid-sub mono">${iface.id}</div>
+                </div>
+                <span class="iface-health ${health.class}">${health.label}</span>
               </div>
               <div class="iface-grid-info">
-                <div><strong>Peers:</strong> ${iface.peers.length}</div>
-                <div><strong>Port:</strong> ${iface.listenPort}</div>
+                <div><strong>Peers:</strong> ${peerCount}</div>
+                <div><strong>Port:</strong> ${iface.listenPort || "-"}</div>
               </div>
               <button class="iface-grid-btn" data-id="${iface.id}">Open</button>
             </div>
@@ -206,9 +410,8 @@ function renderInterfacesGridView(container) {
   });
 }
 
-
 /* ------------------------------------------------------------
-   INTERFACE DETAIL DRAWER (Right Slide Panel)
+   INTERFACE DETAIL DRAWER
 ------------------------------------------------------------ */
 
 function openInterfaceDrawer(interfaceId) {
@@ -216,23 +419,22 @@ function openInterfaceDrawer(interfaceId) {
   if (!iface) return;
 
   const drawer = document.getElementById("interfaceDrawer");
-  drawer.innerHTML = ""; // clear previous content
+  drawer.innerHTML = "";
   drawer.classList.remove("hidden");
 
-  const companies = DB.getCompanies();
-  const routers = DB.getRouters();
-  const cameras = DB.getCameras();
-  const peers = DB.getPeers();
+  const routers = DB.getRouters ? DB.getRouters() : [];
+  const peers = DB.getPeers ? DB.getPeers() : [];
+  const sites = DB.getSites ? DB.getSites() : [];
 
-  // Split peers into router + engineer
-  const peerObjs = iface.peers.map(id => peers.find(p => p.id === id));
+  const peerObjs = (iface.peers || []).map(id => peers.find(p => p.id === id));
   const routerPeers = peerObjs.filter(p => p && p.type === "router");
   const engineerPeers = peerObjs.filter(p => p && p.type === "engineer");
 
   const health = calculateInterfaceHealth(iface);
-
-  // Mask private key
-  const maskedKey = "*".repeat(iface.privateKey.length || 32);
+  const stats = iface.stats || {};
+  const maskedKey = iface.privateKey
+    ? "*".repeat(Math.min(iface.privateKey.length, 44))
+    : "—";
 
   drawer.innerHTML = `
     <div class="iface-drawer-header">
@@ -247,8 +449,8 @@ function openInterfaceDrawer(interfaceId) {
       <div class="iface-sec-title">SUMMARY</div>
       <div class="iface-summary-grid">
         <div><strong>Interface:</strong> ${iface.name}</div>
-        <div><strong>Peers:</strong> ${iface.peers.length}</div>
-        <div><strong>Port:</strong> ${iface.listenPort}</div>
+        <div><strong>Peers:</strong> ${(iface.peers || []).length}</div>
+        <div><strong>Port:</strong> ${iface.listenPort || "-"}</div>
         <div><strong>Health:</strong> <span class="iface-health ${health.class}">${health.label}</span></div>
         <div><strong>Updated:</strong> ${formatDate(iface.updatedAt)}</div>
         <div><strong>Created:</strong> ${formatDate(iface.createdAt)}</div>
@@ -260,91 +462,108 @@ function openInterfaceDrawer(interfaceId) {
       <div class="iface-key-row">
         <label>Private Key</label>
         <span class="mono" id="ifacePrivKeyTxt">${maskedKey}</span>
-        <button class="btn-secondary" id="btnTogglePrivKey">Show</button>
+        <button class="btn-secondary btn-small" id="btnTogglePrivKey">Show</button>
       </div>
       <div class="iface-key-row">
         <label>Public Key</label>
-        <span class="mono">${iface.publicKey}</span>
+        <span class="mono">${iface.publicKey || "—"}</span>
       </div>
     </div>
 
     <div class="iface-drawer-section">
       <div class="iface-sec-title">STATS</div>
       <div class="iface-stats-grid">
-        <div><strong>RX:</strong> ${iface.stats.rxBytes} bytes</div>
-        <div><strong>TX:</strong> ${iface.stats.txBytes} bytes</div>
-        <div><strong>Online Peers:</strong> ${iface.stats.onlinePeers}</div>
-        <div><strong>Stale Peers:</strong> ${iface.stats.stalePeers}</div>
-        <div><strong>Last Reload:</strong> ${formatDate(iface.stats.lastReload)}</div>
+        <div><strong>RX:</strong> ${stats.rxBytes || 0} bytes</div>
+        <div><strong>TX:</strong> ${stats.txBytes || 0} bytes</div>
+        <div><strong>Online Peers:</strong> ${stats.onlinePeers || 0}</div>
+        <div><strong>Stale Peers:</strong> ${stats.stalePeers || 0}</div>
+        <div><strong>Last Reload:</strong> ${formatDate(stats.lastReload)}</div>
       </div>
     </div>
 
     <div class="iface-drawer-section">
       <div class="iface-sec-title">ROUTER PEERS</div>
-      ${routerPeers.length === 0 ? `<div class="iface-empty">No router peers.</div>` :
-        routerPeers.map(p => `
-          <div class="iface-peer-card">
-            <div><strong>${p.name || p.serial || p.id}</strong></div>
-            <div class="mono">${p.vpnIP || "-"}</div>
-            <button class="btn-small" onclick="interfaceOpenPeerDrawer('${p.id}')">View</button>
-          </div>
-        `).join("")
+      ${
+        !routerPeers.length
+          ? `<div class="iface-empty">No router peers.</div>`
+          : routerPeers
+              .map(p => {
+                const router = routers.find(r => r.id === p.routerId);
+                const site = sites.find(s => s.id === p.siteId);
+                return `
+                  <div class="iface-peer-card">
+                    <div><strong>${router ? router.name : p.name || p.id}</strong></div>
+                    <div class="mono">${p.vpnIP || "-"}</div>
+                    <div class="iface-peer-sub">
+                      <span>${site ? site.name : "-"}</span>
+                    </div>
+                    <button class="btn-small" onclick="interfaceOpenPeerDrawer('${p.id}')">View Peer</button>
+                  </div>
+                `;
+              })
+              .join("")
       }
     </div>
 
     <div class="iface-drawer-section">
       <div class="iface-sec-title">ENGINEER PEERS</div>
-      ${engineerPeers.length === 0 ? `<div class="iface-empty">No engineer peers.</div>` :
-        engineerPeers.map(p => `
-          <div class="iface-peer-card">
-            <div><strong>${p.deviceName || p.name || p.id}</strong></div>
-            <div class="mono">${p.vpnIP || "-"}</div>
-            <button class="btn-small" onclick="interfaceOpenPeerDrawer('${p.id}')">View</button>
-          </div>
-        `).join("")
+      ${
+        !engineerPeers.length
+          ? `<div class="iface-empty">No engineer peers.</div>`
+          : engineerPeers
+              .map(p => `
+                <div class="iface-peer-card">
+                  <div><strong>${p.deviceName || p.name || p.id}</strong></div>
+                  <div class="mono">${p.vpnIP || "-"}</div>
+                  <button class="btn-small" onclick="interfaceOpenPeerDrawer('${p.id}')">View Peer</button>
+                </div>
+              `)
+              .join("")
       }
     </div>
 
     <div class="iface-drawer-section">
       <div class="iface-sec-title">ACTIONS</div>
       <div class="iface-action-row">
-        <button class="btn-primary" onclick="openInterfaceEditModal('${iface.id}')">Edit Interface</button>
+        <button class="btn-secondary" onclick="openInterfaceEditModal('${iface.id}')">Edit</button>
         <button class="btn-secondary" onclick="DB.reloadInterface('${iface.id}')">Reload</button>
-        <button class="btn-secondary" onclick="openInterfaceConfigModal('${iface.id}')">Generate Config</button>
+        <button class="btn-secondary" onclick="openInterfaceConfigModal('${iface.id}')">Config</button>
         <button class="btn-danger" onclick="openDeleteInterfaceModal('${iface.id}')">Delete</button>
       </div>
     </div>
   `;
 
-  // Toggle private key
-  drawer.querySelector("#btnTogglePrivKey").onclick = () => {
-    const txt = drawer.querySelector("#ifacePrivKeyTxt");
-    if (txt.dataset.state === "shown") {
-      txt.textContent = maskedKey;
-      txt.dataset.state = "hidden";
-      drawer.querySelector("#btnTogglePrivKey").textContent = "Show";
-    } else {
-      txt.textContent = iface.privateKey;
-      txt.dataset.state = "shown";
-      drawer.querySelector("#btnTogglePrivKey").textContent = "Hide";
-    }
-  };
+  // toggle private key
+  const toggle = drawer.querySelector("#btnTogglePrivKey");
+  if (toggle) {
+    toggle.onclick = () => {
+      const span = drawer.querySelector("#ifacePrivKeyTxt");
+      if (!span) return;
+      if (span.dataset.state === "shown") {
+        span.textContent = maskedKey;
+        span.dataset.state = "hidden";
+        toggle.textContent = "Show";
+      } else {
+        span.textContent = iface.privateKey || "—";
+        span.dataset.state = "shown";
+        toggle.textContent = "Hide";
+      }
+    };
+  }
 }
 
 function closeInterfaceDrawer() {
-  document.getElementById("interfaceDrawer").classList.add("hidden");
+  const el = document.getElementById("interfaceDrawer");
+  if (el) el.classList.add("hidden");
 }
 
-/* Format date */
 function formatDate(d) {
   if (!d) return "-";
   return new Date(d).toLocaleString();
 }
 
-
-
 /* ------------------------------------------------------------
-   ADD NEW INTERFACE MODAL
+   CREATE / EDIT / DELETE / CONFIG  (unchanged logic)
 ------------------------------------------------------------ */
 
 function openInterfaceCreateModal() {
@@ -383,7 +602,7 @@ function openInterfaceCreateModal() {
         className: "btn-primary",
         onClick: () => {
           const name = document.getElementById("newIfaceName").value.trim();
-          const port = parseInt(document.getElementById("newIfacePort").value);
+          const port = parseInt(document.getElementById("newIfacePort").value, 10);
           const desc = document.getElementById("newIfaceDesc").value.trim();
           const dns = document
             .getElementById("newIfaceDNS")
@@ -411,11 +630,6 @@ function openInterfaceCreateModal() {
   });
 }
 
-
-/* ------------------------------------------------------------
-   EDIT INTERFACE MODAL
------------------------------------------------------------- */
-
 function openInterfaceEditModal(id) {
   const iface = DB.getInterface(id);
   if (!iface) return;
@@ -436,17 +650,17 @@ function openInterfaceEditModal(id) {
 
       <div class="form-group">
         <label>Description</label>
-        <input id="editIfaceDesc" class="form-input" value="${iface.description}">
+        <input id="editIfaceDesc" class="form-input" value="${iface.description || ""}">
       </div>
 
       <div class="form-group">
         <label>DNS Servers (comma separated)</label>
-        <input id="editIfaceDNS" class="form-input" value="${iface.dns.join(", ")}">
+        <input id="editIfaceDNS" class="form-input" value="${(iface.dns || []).join(", ")}">
       </div>
 
       <div class="form-group">
         <label>MTU</label>
-        <input id="editIfaceMTU" class="form-input" type="number" value="${iface.mtu}">
+        <input id="editIfaceMTU" class="form-input" type="number" value="${iface.mtu || 1420}">
       </div>
     `,
     actions: [
@@ -460,13 +674,14 @@ function openInterfaceEditModal(id) {
         className: "btn-primary",
         onClick: () => {
           const name = document.getElementById("editIfaceName").value.trim();
-          const port = parseInt(document.getElementById("editIfacePort").value);
+          const port = parseInt(document.getElementById("editIfacePort").value, 10);
           const desc = document.getElementById("editIfaceDesc").value.trim();
           const dns = document
             .getElementById("editIfaceDNS")
             .value.split(",")
-            .map(s => s.trim());
-          const mtu = parseInt(document.getElementById("editIfaceMTU").value);
+            .map(s => s.trim())
+            .filter(Boolean);
+          const mtu = parseInt(document.getElementById("editIfaceMTU").value, 10);
 
           DB.updateInterface(id, {
             name,
@@ -483,11 +698,6 @@ function openInterfaceEditModal(id) {
     ]
   });
 }
-
-
-/* ------------------------------------------------------------
-   DELETE INTERFACE CONFIRMATION
------------------------------------------------------------- */
 
 function openDeleteInterfaceModal(id) {
   const iface = DB.getInterface(id);
@@ -519,11 +729,6 @@ function openDeleteInterfaceModal(id) {
   });
 }
 
-
-/* ------------------------------------------------------------
-   CONFIG GENERATOR MODAL
------------------------------------------------------------- */
-
 function openInterfaceConfigModal(id) {
   const iface = DB.getInterface(id);
   if (!iface) return;
@@ -554,7 +759,7 @@ function openInterfaceConfigModal(id) {
   });
 }
 
-
 function interfaceOpenPeerDrawer(peerId) {
-  navigateTo("peers"); // Or your peer view page
+  // simple: jump to peers view and open drawer from there later if you want
+  navigateTo("peers");
 }

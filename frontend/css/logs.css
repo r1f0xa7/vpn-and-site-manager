@@ -1,0 +1,119 @@
+.log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    margin-bottom: 10px;
+  }
+  
+  .log-subtitle {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  
+  .log-filters {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+  }
+  
+  .log-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+  }
+  
+  .log-table-wrapper {
+    max-height: none;
+  }
+  
+  .log-table thead th {
+    cursor: pointer;
+  }
+  
+  .log-th-sort {
+    position: relative;
+    user-select: none;
+  }
+  
+  .log-sort-indicator {
+    margin-left: 4px;
+    font-size: 10px;
+  }
+  
+  .log-th-sort-active {
+    color: var(--green);
+  }
+  
+  /* Severity chips */
+  .log-sev {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  
+  .log-sev-info {
+    background: rgba(120, 200, 255, 0.16);
+    color: #8ad0ff;
+  }
+  
+  .log-sev-warn {
+    background: rgba(255, 220, 120, 0.16);
+    color: #ffd66b;
+  }
+  
+  .log-sev-error {
+    background: rgba(255, 120, 120, 0.16);
+    color: #ff8a8a;
+  }
+  
+  /* Footer / pagination */
+  .log-table-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 12px;
+  }
+  
+  .log-page-size label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .log-pagination {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .log-page-info,
+  .log-page-current {
+    color: var(--text-soft);
+  }
+  
+  .log-page-btn {
+    color: var(--text-main);
+    min-width: 26px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-main);
+    cursor: pointer;
+    font-size: 15px;
+  }
+  
+  .log-page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  

@@ -295,3 +295,37 @@ tbody tr:nth-child(even) {
   cursor: pointer;
   font-size: 12px;
 }
+
+
+
+
+
+/* ------------- test ----------------------  */
+
+/* === APP LAYOUT FIX === */
+
+/* Make the page a vertical flex layout */
+html,
+body {
+  height: 100%;
+}
+
+/* Body: topbar at top, view-root fills the rest */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Topbar stays at the top, doesn't stretch */
+.topbar {
+  flex-shrink: 0;
+}
+
+/* Main content area under the topbar */
+.view-root {
+  flex: 1;           /* fill remaining height */
+  min-height: 0;     /* override old min-height */
+  padding: 20px;
+  overflow-y: auto;  /* scroll only this area */
+  overflow-x: hidden;
+}

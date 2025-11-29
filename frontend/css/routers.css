@@ -151,3 +151,133 @@
     font-weight: bold;
   }
   
+
+  .routers-table-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 8px;
+    margin-top: 6px;
+    border-top: 1px solid var(--border-soft);
+    font-size: 12px;
+  }
+  
+  .routers-page-size label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .routers-pagination {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  
+  .routers-page-info,
+  .routers-page-current {
+    color: var(--text-soft);
+  }
+  
+  .routers-page-btn {
+    min-width: 26px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border-soft);
+    background: var(--bg-main);
+    cursor: pointer;
+    font-size: 12px;
+  }
+  
+  .routers-page-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  
+
+  /* Table improvements */
+.routers-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.routers-table thead th {
+  background: rgba(255,255,255,0.04);
+  backdrop-filter: blur(5px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 10px 12px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-soft);
+}
+
+/* Row styling */
+.routers-table tbody tr {
+  transition: background 0.15s ease;
+}
+
+.routers-table tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.02);
+}
+
+.routers-table tbody tr:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* Cell spacing */
+.routers-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+/* Status badge */
+.status-badge {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  font-size:12px;
+  padding:3px 8px;
+  border-radius:12px;
+}
+
+.status-online {
+  background:rgba(0,255,0,0.08);
+  color:#4cff4c;
+}
+
+.status-offline {
+  background:rgba(255,0,0,0.09);
+  color:#ff4c4c;
+}
+
+/* Action buttons compact */
+.router-actions {
+  display:flex;
+  gap:6px;
+}
+
+.router-action-btn {
+  padding:4px 8px;
+  border-radius:5px;
+  background:rgba(255,255,255,0.07);
+  border:1px solid rgba(255,255,255,0.12);
+  font-size:12px;
+  cursor:pointer;
+  transition:background 0.15s ease;
+}
+
+.router-action-btn:hover {
+  background:rgba(255,255,255,0.12);
+}
+
+/* Table wrapper */
+.routers-table-wrapper {
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+

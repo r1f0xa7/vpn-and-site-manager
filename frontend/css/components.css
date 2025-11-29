@@ -162,6 +162,177 @@ body.modal-style-modern .modal {
   gap: 8px;
   margin-top: 10px;
 }
+/* Sections & layout */
+.form-section {
+  padding: 10px 10px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  background: rgba(0, 0, 0, 0.12);
+  margin-bottom: 10px;
+}
+
+body.modal-style-wg .form-section {
+  background: transparent;
+}
+
+.form-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.form-section-header h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.form-section-header p {
+  font-size: 12px;
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* Form groups */
+.form-group {
+  margin-bottom: 8px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.form-hint {
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
+/* Input base */
+.form-input {
+  width: 100%;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-main);
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease,
+              background 0.15s ease, transform 0.05s ease;
+}
+
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(100, 180, 255, 0.75);
+}
+
+.form-input::placeholder {
+  color: var(--text-soft);
+}
+
+/* Input with right-side addon */
+.input-with-addon {
+  display: flex;
+  align-items: stretch;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  background: var(--bg-main);
+}
+
+.input-with-addon .form-input {
+  border: none;
+  border-radius: 0;
+}
+
+.input-addon {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 11px;
+  border-left: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-soft);
+}
+
+/* Sync focus styles */
+.input-with-addon:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(100, 180, 255, 0.75);
+}
+
+/* Toggle */
+.form-group-toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toggle-label input {
+  display: none;
+}
+
+.toggle-pill {
+  width: 32px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--border-soft);
+  position: relative;
+  transition: background 0.15s ease;
+}
+
+.toggle-pill::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--bg-panel);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s ease;
+}
+
+.toggle-label input:checked + .toggle-pill {
+  background: var(--accent);
+}
+
+.toggle-label input:checked + .toggle-pill::after {
+  transform: translateX(16px);
+}
+
+/* Header tweaks */
+.modal-title-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modal-subtitle {
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
 
 /* ----------------------------------------------------
      TOAST NOTIFICATIONS

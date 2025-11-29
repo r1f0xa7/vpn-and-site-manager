@@ -5,7 +5,10 @@ console.log("[RENDER] Loaded peers.js");
 ------------------------------------------------------------ */
 
 function renderPeers(root) {
-  const peers = DB.getPeers();
+  // pagination state (per render)
+  let peersCurrentPage = 1;
+  let peersPageSize = 20;
+  let peersTotalPages = 1;
 
   /* -------------------------------
      HEADER + ACTION BAR
@@ -40,7 +43,6 @@ function renderPeers(root) {
 
   root.appendChild(header);
 
-  // Add Peer (opens modal in Part C)
   header.querySelector("#btnAddPeer").onclick = () => openPeerCreateModal();
 
   /* -------------------------------
@@ -59,31 +61,73 @@ function renderPeers(root) {
             <th style="width:100px;">Type</th>
             <th style="width:110px;">VPN IP</th>
             <th style="width:110px;">Interface</th>
-            <th style="width:110px;">Site/User</th>
-            <th style="width:120px;">Last Handshake</th>
+            <th style="width:140px;">Site/User</th>
+            <th style="width:150px;">Last Handshake</th>
             <th style="width:90px;">Status</th>
-            <th style="width:110px;">Traffic</th>
-            <th style="width:100px;">Actions</th>
+            <th style="width:120px;">Traffic</th>
+            <th style="width:120px;">Actions</th>
           </tr>
         </thead>
         <tbody id="peersTableBody"></tbody>
       </table>
     </div>
+
+    <div class="peers-table-footer">
+      <div class="peers-page-size">
+        <label>
+          Rows per page
+          <select id="peersPageSize" class="filter-select">
+            <option value="20" selected>20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </label>
+      </div>
+      <div class="peers-pagination" id="peersPagination"></div>
+    </div>
   `;
 
   root.appendChild(tableSection);
 
+  const tbody = tableSection.querySelector("#peersTableBody");
+  const pageSizeSelect = tableSection.querySelector("#peersPageSize");
+  const paginationEl = tableSection.querySelector("#peersPagination");
+
+  /* -------------------------------
+     Pagination render
+  --------------------------------*/
+  function renderPagination(total) {
+    if (!total) {
+      paginationEl.innerHTML = `<span class="peers-page-info">0 peers</span>`;
+      peersTotalPages = 1;
+      return;
+    }
+
+    const totalPages = Math.max(1, Math.ceil(total / peersPageSize));
+    peersTotalPages = totalPages;
+    if (peersCurrentPage > totalPages) peersCurrentPage = totalPages;
+
+    const start = (peersCurrentPage - 1) * peersPageSize + 1;
+    const end = Math.min(total, peersCurrentPage * peersPageSize);
+
+    paginationEl.innerHTML = `
+      <span class="peers-page-info">${start}-${end} of ${total} peers</span>
+      <button class="peers-page-btn" data-page="prev" ${peersCurrentPage === 1 ? "disabled" : ""}>‹</button>
+      <span class="peers-page-current">Page ${peersCurrentPage} of ${totalPages}</span>
+      <button class="peers-page-btn" data-page="next" ${peersCurrentPage === totalPages ? "disabled" : ""}>›</button>
+    `;
+  }
+
   /* -------------------------------
      TABLE POPULATION FUNCTION
   --------------------------------*/
-  const tbody = tableSection.querySelector("#peersTableBody");
-
   function paintPeers() {
     const q = document.getElementById("peerSearchInput").value.trim().toLowerCase();
     const fType = document.getElementById("peerTypeFilter").value;
     const fState = document.getElementById("peerStateFilter").value;
 
-    let list = DB.getPeers();
+    let list = DB.getPeers() || [];
 
     // Search filter
     if (q) {
@@ -98,19 +142,37 @@ function renderPeers(root) {
     if (fType) list = list.filter(p => p.type === fType);
 
     // State filter
-    if (fState) list = list.filter(p => p.stats.state === fState);
+    if (fState) list = list.filter(p => p.stats && p.stats.state === fState);
 
-    if (list.length === 0) {
+    if (!list.length) {
       tbody.innerHTML = `
         <tr><td colspan="10" style="text-align:center;color:var(--text-muted);">No peers found.</td></tr>
       `;
+      renderPagination(0);
       return;
     }
 
-    tbody.innerHTML = list
+    // Optional: stable sort by type then name
+    list.sort((a, b) => {
+      const ta = (a.type || "").localeCompare(b.type || "");
+      if (ta !== 0) return ta;
+      return (a.name || "").localeCompare(b.name || "");
+    });
+
+    const total = list.length;
+    const totalPages = Math.max(1, Math.ceil(total / peersPageSize));
+    if (peersCurrentPage > totalPages) peersCurrentPage = totalPages;
+
+    const startIndex = (peersCurrentPage - 1) * peersPageSize;
+    const pageItems = list.slice(startIndex, startIndex + peersPageSize);
+
+    tbody.innerHTML = pageItems
       .map(p => {
         const stateBadge = renderPeerStatusBadge(p);
-        const lastHS = p.stats.lastHandshake ? new Date(p.stats.lastHandshake).toLocaleString() : "-";
+        const lastHS = p.stats && p.stats.lastHandshake
+          ? new Date(p.stats.lastHandshake).toLocaleString()
+          : "-";
+
         const iface = DB.getInterface(p.interfaceId);
         const sites = DB.getSites ? DB.getSites() : [];
         const users = DB.getUsers ? DB.getUsers() : [];
@@ -124,6 +186,8 @@ function renderPeers(root) {
           siteOrUser = u ? u.name : (p.userId || "-");
         }
 
+        const rx = p.stats ? p.stats.rxBytes : 0;
+        const tx = p.stats ? p.stats.txBytes : 0;
 
         return `
           <tr class="peer-row" data-id="${p.id}">
@@ -135,7 +199,7 @@ function renderPeers(root) {
             <td>${siteOrUser}</td>
             <td>${lastHS}</td>
             <td>${stateBadge}</td>
-            <td>${p.stats.rxBytes}/${p.stats.txBytes}</td>
+            <td class="mono">${rx}/${tx}</td>
             <td>
               <button class="peer-action" data-act="view" data-id="${p.id}">View</button>
               <button class="peer-action" data-act="config" data-id="${p.id}">Config</button>
@@ -164,16 +228,50 @@ function renderPeers(root) {
         peerOpenPeerDrawer(row.dataset.id);
       };
     });
-  }
 
-  paintPeers();
+    renderPagination(total);
+  }
 
   /* -------------------------------
      Search & filter events
   --------------------------------*/
-  document.getElementById("peerSearchInput").oninput = paintPeers;
-  document.getElementById("peerTypeFilter").onchange = paintPeers;
-  document.getElementById("peerStateFilter").onchange = paintPeers;
+  document.getElementById("peerSearchInput").oninput = () => {
+    peersCurrentPage = 1;
+    paintPeers();
+  };
+  document.getElementById("peerTypeFilter").onchange = () => {
+    peersCurrentPage = 1;
+    paintPeers();
+  };
+  document.getElementById("peerStateFilter").onchange = () => {
+    peersCurrentPage = 1;
+    paintPeers();
+  };
+
+  // rows-per-page change
+  pageSizeSelect.addEventListener("change", () => {
+    peersPageSize = parseInt(pageSizeSelect.value, 10) || 20;
+    peersCurrentPage = 1;
+    paintPeers();
+  });
+
+  // pagination buttons
+  paginationEl.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-page]");
+    if (!btn) return;
+    const action = btn.dataset.page;
+
+    if (action === "prev" && peersCurrentPage > 1) {
+      peersCurrentPage--;
+      paintPeers();
+    } else if (action === "next" && peersCurrentPage < peersTotalPages) {
+      peersCurrentPage++;
+      paintPeers();
+    }
+  });
+
+  // initial render
+  paintPeers();
 }
 
 /* ------------------------------------------------------------
@@ -181,7 +279,7 @@ function renderPeers(root) {
 ------------------------------------------------------------ */
 
 function renderPeerStatusBadge(peer) {
-  const st = peer.stats.state;
+  const st = peer.stats && peer.stats.state;
   if (st === "online") return `<span class="peer-status status-online">ONLINE</span>`;
   if (st === "stale") return `<span class="peer-status status-stale">STALE</span>`;
   return `<span class="peer-status status-offline">OFFLINE</span>`;
@@ -189,6 +287,7 @@ function renderPeerStatusBadge(peer) {
 
 /* Capitalize helper */
 function capitalize(str) {
+  if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
@@ -200,7 +299,7 @@ function capitalize(str) {
 function peerOpenPeerDrawer(peerId) {
   console.log(peerId);
   const peer = DB.getPeer(peerId);
-  console.log("peer="+peer);
+  console.log("peer=" + peer);
   if (!peer) return;
 
   const drawer = document.getElementById("peerDrawer");
@@ -217,10 +316,14 @@ function peerOpenPeerDrawer(peerId) {
   const site = sites.find(s => s.id === peer.siteId);
   const user = users.find(u => u.id === peer.userId);
 
-  const maskedKey = peer.privateKey ? "*".repeat(Math.min(peer.privateKey.length, 44)) : "—";
+  const maskedKey = peer.privateKey
+    ? "*".repeat(Math.min(peer.privateKey.length, 44))
+    : "—";
 
   const stateBadge = renderPeerStatusBadge(peer);
-  const lastHS = peer.stats.lastHandshake ? new Date(peer.stats.lastHandshake).toLocaleString() : "-";
+  const lastHS = peer.stats && peer.stats.lastHandshake
+    ? new Date(peer.stats.lastHandshake).toLocaleString()
+    : "-";
 
   // ACL sites (engineer only)
   const aclSiteNames = (peer.aclSites || []).map(id => {
@@ -438,7 +541,6 @@ function openPeerConfigModal(peerId) {
 }
 
 
-
 /* ------------------------------------------------------------
    PEER ACL MODAL (Engineer peers)
 ------------------------------------------------------------ */
@@ -643,10 +745,13 @@ function openPeerCreateModal() {
   const typeSel = document.getElementById("peerTypeSel");
   typeSel.onchange = () => {
     const val = typeSel.value;
-    document.getElementById("peerRouterGroup").style.display = val === "router" ? "block" : "none";
-    document.getElementById("peerUserGroup").style.display = val === "engineer" ? "block" : "none";
+    document.getElementById("peerRouterGroup").style.display =
+      val === "router" ? "block" : "none";
+    document.getElementById("peerUserGroup").style.display =
+      val === "engineer" ? "block" : "none";
   };
 }
+
 
 /* ------------------------------------------------------------
    DELETE PEER CONFIRM
