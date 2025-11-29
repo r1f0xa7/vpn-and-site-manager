@@ -1,0 +1,110 @@
+.login-page {
+    min-height: 100vh;
+    background: #000;              /* black background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  
+  .login-card {
+    background: #050505;           /* very dark panel */
+    border: 1px solid #222;
+    border-radius: 10px;
+    padding: 24px 26px;
+    max-width: 360px;
+    width: 100%;
+    color: #f5f5f5;                /* white text */
+    box-shadow: 0 0 20px rgba(0,0,0,0.6);
+  }
+  
+  .login-logo {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  
+  .login-logo-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid #e53935;     /* red circle */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: #e53935;                /* red text */
+  }
+  
+  .login-logo-title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .login-logo-sub {
+    font-size: 11px;
+    color: #9e9e9e;
+  }
+  
+  .login-alert {
+    background: rgba(229,57,53,0.1); /* red-ish */
+    border: 1px solid #e53935;
+    color: #ff5252;
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+  
+  .login-form .form-group label {
+    font-size: 12px;
+    color: #ddd;
+  }
+  
+  .login-form .form-input {
+    background: #000;
+    border: 1px solid #333;
+    color: #f5f5f5;
+  }
+  
+  .login-form .form-input:focus {
+    border-color: #e53935;  /* red focus */
+    outline: none;
+  }
+  
+  .login-btn {
+    width: 100%;
+    margin-top: 8px;
+  }
+  
+  .btn-primary {
+    background: #e53935;     /* red button */
+    border: 1px solid #e53935;
+    color: #fff;
+  }
+  
+  .btn-primary:hover {
+    background: #ff5252;
+    border-color: #ff5252;
+  }
+  
+  .login-hint {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #9e9e9e;
+  }
+  
+  .login-hint code {
+    background: #000;
+    border-radius: 4px;
+    padding: 2px 4px;
+    border: 1px solid #333;
+  }
+  
+  .hint-label {
+    font-weight: 600;
+    color: #a5d6a7;          /* green label */
+  }
+  

@@ -34,29 +34,36 @@ const state = loadLS("wg_state", null) || {
   ---------------------------------------------- */
   currentUserId: "u1",
 
+  /* ---------------------------------------------------------
+   USERS & AUTH (FRONTEND DEMO ONLY)
+--------------------------------------------------------- */
+
   users: [
     {
-      id: "u1",
-      name: "Admin User",
-      email: "admin@example.com",
-      role: "admin",
-      status: "active"
+      id: "u_admin",
+      username: "admin",
+      fullName: "Platform Administrator",
+      role: "admin",          // admin | engineer | viewer
+      password: "admin123"    // DEMO ONLY – plain-text; replace with backend auth later
     },
     {
-      id: "u2",
-      name: "IT Engineer 1",
-      email: "engineer@example.com",
-      role: "it_engineer",
-      status: "active"
+      id: "u_eng",
+      username: "engineer",
+      fullName: "VPN Engineer",
+      role: "engineer",
+      password: "eng123"
     },
     {
-      id: "u3",
-      name: "Viewer Guy",
-      email: "viewer@example.com",
+      id: "u_view",
+      username: "viewer",
+      fullName: "Read-only User",
       role: "viewer",
-      status: "active"
+      password: "view123"
     }
   ],
+
+  currentUser: null, // set after login
+
 
   /* ----------------------------------------------
      COMPANIES
@@ -102,32 +109,32 @@ const state = loadLS("wg_state", null) || {
    ROUTERS (PHYSICAL TELTONIKA DEVICES)
 --------------------------------------------------------- */
 
-routers: [
-  // sample router (remove later)
-  // {
-  //   id: "router001",
-  //   name: "RUTX11-001",
-  //   serial: "1234567890",
-  //   model: "RUTX11",
-  //   imei: "352000000000001",
-  //   mac: "00:11:22:33:44:55",
-  //
-  //   tunnelIP: "10.240.1.10/32",
-  //   interfaceId: "wg0",
-  //
-  //   siteId: "site001",
-  //
-  //   stats: {
-  //     online: false,
-  //     lastSeen: null,
-  //     rxBytes: 0,
-  //     txBytes: 0
-  //   },
-  //
-  //   createdAt: "2025-01-01T12:00:00Z",
-  //   updatedAt: "2025-01-01T12:00:00Z"
-  // }
-],
+  routers: [
+    // sample router (remove later)
+    // {
+    //   id: "router001",
+    //   name: "RUTX11-001",
+    //   serial: "1234567890",
+    //   model: "RUTX11",
+    //   imei: "352000000000001",
+    //   mac: "00:11:22:33:44:55",
+    //
+    //   tunnelIP: "10.240.1.10/32",
+    //   interfaceId: "wg0",
+    //
+    //   siteId: "site001",
+    //
+    //   stats: {
+    //     online: false,
+    //     lastSeen: null,
+    //     rxBytes: 0,
+    //     txBytes: 0
+    //   },
+    //
+    //   createdAt: "2025-01-01T12:00:00Z",
+    //   updatedAt: "2025-01-01T12:00:00Z"
+    // }
+  ],
 
 
   /* ----------------------------------------------
@@ -486,6 +493,34 @@ function deleteItem(arr, id) {
 =========================================================== */
 
 const DB = {
+
+
+  /* ---------------------------------------------------------
+   USER / AUTH HELPERS (FRONTEND DEMO)
+--------------------------------------------------------- */
+
+  getUsers() {
+    return state.users || [];
+  },
+
+  getUserByUsername(username) {
+    return (state.users || []).find(u => u.username === username);
+  },
+
+  setCurrentUser(user) {
+    state.currentUser = user ? {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      role: user.role
+    } : null;
+    saveState();
+  },
+
+  getCurrentUser() {
+    return state.currentUser || null;
+  },
+
   /* Users */
   getUsers() { return state.users; },
   getUser(id) { return findItem(state.users, id); },
@@ -590,253 +625,253 @@ const DB = {
    IPAM: CORE HELPERS
 --------------------------------------------------------- */
 
- /* IP Allocations */
- getAllocations() { return state.ip_allocations; },
- upsertAllocation(data) {
-   if (!data.id) data.id = uid("ipa");
-   const ex = findItem(state.ip_allocations, data.id);
-   if (ex) Object.assign(ex, data);
-   else state.ip_allocations.push(data);
-   saveState();
- },
+  /* IP Allocations */
+  getAllocations() { return state.ip_allocations; },
+  upsertAllocation(data) {
+    if (!data.id) data.id = uid("ipa");
+    const ex = findItem(state.ip_allocations, data.id);
+    if (ex) Object.assign(ex, data);
+    else state.ip_allocations.push(data);
+    saveState();
+  },
 
-getIPAllocations() {
-  return state.ipAllocations || [];
-},
+  getIPAllocations() {
+    return state.ipAllocations || [];
+  },
 
-getAllocFor(id, type) {
-  return state.ipAllocations.find(x => x.id === id && x.type === type);
-},
+  getAllocFor(id, type) {
+    return state.ipAllocations.find(x => x.id === id && x.type === type);
+  },
 
-reserveCIDR(id, type, pool, cidr) {
-  state.ipAllocations.push({
-    id, type, pool, cidr, allocatedAt: new Date().toISOString()
-  });
-  saveState();
-},
+  reserveCIDR(id, type, pool, cidr) {
+    state.ipAllocations.push({
+      id, type, pool, cidr, allocatedAt: new Date().toISOString()
+    });
+    saveState();
+  },
 
-/* ---------------------------------------------------------
-   AUTO-ALLOCATE ROUTER VPN IP (/32)
---------------------------------------------------------- */
+  /* ---------------------------------------------------------
+     AUTO-ALLOCATE ROUTER VPN IP (/32)
+  --------------------------------------------------------- */
 
-allocateRouterIP(routerId) {
-  // return existing
-  const existing = DB.getAllocFor(routerId, "router");
-  if (existing) return existing.cidr;
+  allocateRouterIP(routerId) {
+    // return existing
+    const existing = DB.getAllocFor(routerId, "router");
+    if (existing) return existing.cidr;
 
-  // router pool = 10.240.0.0/12
-  const pool = state.ipPools.routers.cidrs[0];
+    // router pool = 10.240.0.0/12
+    const pool = state.ipPools.routers.cidrs[0];
 
-  // generate /32: 10.240.x.y
-  let ip;
-  while (true) {
-    const a = 240;                  // fixed: 10.240.x.x
-    const b = Math.floor(Math.random() * 256);
-    const c = Math.floor(Math.random() * 256);
+    // generate /32: 10.240.x.y
+    let ip;
+    while (true) {
+      const a = 240;                  // fixed: 10.240.x.x
+      const b = Math.floor(Math.random() * 256);
+      const c = Math.floor(Math.random() * 256);
 
-    ip = `10.${a}.${b}.${c}/32`;
+      ip = `10.${a}.${b}.${c}/32`;
 
-    if (!state.ipAllocations.find(x => x.cidr === ip))
+      if (!state.ipAllocations.find(x => x.cidr === ip))
+        break;
+    }
+
+    DB.reserveCIDR(routerId, "router", "routers", ip);
+    return ip;
+  },
+
+  /* ---------------------------------------------------------
+     AUTO-ALLOCATE ENGINEER VPN IP (/32)
+  --------------------------------------------------------- */
+
+  allocateEngineerIP(peerId) {
+    const existing = DB.getAllocFor(peerId, "engineer");
+    if (existing) return existing.cidr;
+
+    // engineer pool: 10.128.0.0/13
+    // Range: 10.128.0.0 – 10.135.255.255
+    let ip;
+
+    while (true) {
+      const A = 128 + Math.floor(Math.random() * 8); // 128–135
+      const B = Math.floor(Math.random() * 256);
+      const C = Math.floor(Math.random() * 256);
+
+      ip = `10.${A}.${B}.${C}/32`;
+
+      if (!state.ipAllocations.find(x => x.cidr === ip))
+        break;
+    }
+
+    DB.reserveCIDR(peerId, "engineer", "engineers", ip);
+    return ip;
+  },
+
+  /* ---------------------------------------------------------
+     AUTO-ALLOCATE SITE NAT SUBNET (/24)
+  --------------------------------------------------------- */
+
+  allocateSiteSubnet(siteId) {
+    const existing = DB.getAllocFor(siteId, "site");
+    if (existing) return existing.cidr;
+
+    const pools = state.ipPools.sites.cidrs;
+    const reserved = state.ipPools.sites.reserved;
+
+    let result;
+
+    while (true) {
+      // Choose random pool (10.0.0.0/12, etc.)
+      const base = pools[Math.floor(Math.random() * pools.length)];
+
+      // base "10.X.0.0/12"
+      const octets = base.split("/")[0].split(".");
+      const A = Number(octets[1]); // base second octet
+
+      const second = A + Math.floor(Math.random() * Math.pow(2, (12 - 8))); // within /12 boundary
+
+      const third = Math.floor(Math.random() * 256);
+      const subnet = `10.${second}.${third}.0/24`;
+
+      // skip reserved blocks
+      if (reserved.some(r => cidrWithin(subnet, r))) continue;
+
+      // skip if already used
+      if (state.ipAllocations.find(x => x.cidr === subnet)) continue;
+
+      result = subnet;
       break;
-  }
+    }
 
-  DB.reserveCIDR(routerId, "router", "routers", ip);
-  return ip;
-},
-
-/* ---------------------------------------------------------
-   AUTO-ALLOCATE ENGINEER VPN IP (/32)
---------------------------------------------------------- */
-
-allocateEngineerIP(peerId) {
-  const existing = DB.getAllocFor(peerId, "engineer");
-  if (existing) return existing.cidr;
-
-  // engineer pool: 10.128.0.0/13
-  // Range: 10.128.0.0 – 10.135.255.255
-  let ip;
-
-  while (true) {
-    const A = 128 + Math.floor(Math.random() * 8); // 128–135
-    const B = Math.floor(Math.random() * 256);
-    const C = Math.floor(Math.random() * 256);
-
-    ip = `10.${A}.${B}.${C}/32`;
-
-    if (!state.ipAllocations.find(x => x.cidr === ip))
-      break;
-  }
-
-  DB.reserveCIDR(peerId, "engineer", "engineers", ip);
-  return ip;
-},
-
-/* ---------------------------------------------------------
-   AUTO-ALLOCATE SITE NAT SUBNET (/24)
---------------------------------------------------------- */
-
-allocateSiteSubnet(siteId) {
-  const existing = DB.getAllocFor(siteId, "site");
-  if (existing) return existing.cidr;
-
-  const pools = state.ipPools.sites.cidrs;
-  const reserved = state.ipPools.sites.reserved;
-
-  let result;
-
-  while (true) {
-    // Choose random pool (10.0.0.0/12, etc.)
-    const base = pools[Math.floor(Math.random() * pools.length)];
-
-    // base "10.X.0.0/12"
-    const octets = base.split("/")[0].split(".");
-    const A = Number(octets[1]); // base second octet
-
-    const second = A + Math.floor(Math.random() * Math.pow(2, (12 - 8))); // within /12 boundary
-
-    const third = Math.floor(Math.random() * 256);
-    const subnet = `10.${second}.${third}.0/24`;
-
-    // skip reserved blocks
-    if (reserved.some(r => cidrWithin(subnet, r))) continue;
-
-    // skip if already used
-    if (state.ipAllocations.find(x => x.cidr === subnet)) continue;
-
-    result = subnet;
-    break;
-  }
-
-  DB.reserveCIDR(siteId, "site", "sites", result);
-  return result;
-},
+    DB.reserveCIDR(siteId, "site", "sites", result);
+    return result;
+  },
 
 
-/* ---------------------------------------------------------
-   ROUTER MANAGEMENT
---------------------------------------------------------- */
+  /* ---------------------------------------------------------
+     ROUTER MANAGEMENT
+  --------------------------------------------------------- */
 
-getRouters() {
-  return state.routers || [];
-},
+  getRouters() {
+    return state.routers || [];
+  },
 
-getRouter(id) {
-  return state.routers.find(r => r.id === id);
-},
+  getRouter(id) {
+    return state.routers.find(r => r.id === id);
+  },
 
-addRouter(data) {
-  const id = uid("router");
+  addRouter(data) {
+    const id = uid("router");
 
-  // permanent tunnel IP from IPAM system
-  const tunnelIP = DB.allocateRouterIP(id);
+    // permanent tunnel IP from IPAM system
+    const tunnelIP = DB.allocateRouterIP(id);
 
-  const router = {
-    id,
-    name: data.name || id,
-    serial: data.serial || "",
-    model: data.model || "",
-    imei: data.imei || "",
-    mac: data.mac || "",
+    const router = {
+      id,
+      name: data.name || id,
+      serial: data.serial || "",
+      model: data.model || "",
+      imei: data.imei || "",
+      mac: data.mac || "",
 
-    tunnelIP,
-    interfaceId: data.interfaceId || "wg0",
+      tunnelIP,
+      interfaceId: data.interfaceId || "wg0",
 
-    siteId: data.siteId || null,
+      siteId: data.siteId || null,
 
-    stats: {
-      online: false,
-      lastSeen: null,
-      rxBytes: 0,
-      txBytes: 0
-    },
+      stats: {
+        online: false,
+        lastSeen: null,
+        rxBytes: 0,
+        txBytes: 0
+      },
 
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
 
-  state.routers.push(router);
-  saveState();
+    state.routers.push(router);
+    saveState();
 
-  // Create router peer
-  DB.addPeer({
-    type: "router",
-    name: router.name,
-    interfaceId: router.interfaceId,
-    vpnIP: tunnelIP,
-    routerId: router.id,
-    siteId: router.siteId,
-    allowedIPs: [],  // backend will inject site NAT subnet later
-    aclSites: []     // no ACL for routers
-  });
+    // Create router peer
+    DB.addPeer({
+      type: "router",
+      name: router.name,
+      interfaceId: router.interfaceId,
+      vpnIP: tunnelIP,
+      routerId: router.id,
+      siteId: router.siteId,
+      allowedIPs: [],  // backend will inject site NAT subnet later
+      aclSites: []     // no ACL for routers
+    });
 
-  DB.addLog({
-    category: "router",
-    severity: "info",
-    message: `Router added: ${router.name}`,
-    objectType: "router",
-    objectId: id
-  });
+    DB.addLog({
+      category: "router",
+      severity: "info",
+      message: `Router added: ${router.name}`,
+      objectType: "router",
+      objectId: id
+    });
 
-  return router;
-},
+    return router;
+  },
 
-updateRouter(id, updates) {
-  const router = this.getRouter(id);
-  if (!router) return;
+  updateRouter(id, updates) {
+    const router = this.getRouter(id);
+    if (!router) return;
 
-  Object.assign(router, updates, {
-    updatedAt: new Date().toISOString()
-  });
+    Object.assign(router, updates, {
+      updatedAt: new Date().toISOString()
+    });
 
-  saveState();
+    saveState();
 
-  DB.addLog({
-    category: "router",
-    severity: "info",
-    message: `Router updated: ${router.name}`,
-    objectType: "router",
-    objectId: id
-  });
-},
+    DB.addLog({
+      category: "router",
+      severity: "info",
+      message: `Router updated: ${router.name}`,
+      objectType: "router",
+      objectId: id
+    });
+  },
 
-deleteRouter(id) {
-  const router = this.getRouter(id);
-  if (!router) return;
+  deleteRouter(id) {
+    const router = this.getRouter(id);
+    if (!router) return;
 
-  // delete its peer
-  const peer = DB.getPeers().find(p => p.routerId === id);
-  if (peer) DB.deletePeer(peer.id);
+    // delete its peer
+    const peer = DB.getPeers().find(p => p.routerId === id);
+    if (peer) DB.deletePeer(peer.id);
 
-  state.routers = state.routers.filter(r => r.id !== id);
-  saveState();
+    state.routers = state.routers.filter(r => r.id !== id);
+    saveState();
 
-  DB.addLog({
-    category: "router",
-    severity: "warn",
-    message: `Router deleted: ${router.name}`,
-    objectType: "router",
-    objectId: id
-  });
-},
+    DB.addLog({
+      category: "router",
+      severity: "warn",
+      message: `Router deleted: ${router.name}`,
+      objectType: "router",
+      objectId: id
+    });
+  },
 
-/* ---------------------------------------------------------
-   Router status simulation
---------------------------------------------------------- */
+  /* ---------------------------------------------------------
+     Router status simulation
+  --------------------------------------------------------- */
 
-setRouterOnline(id) {
-  const r = this.getRouter(id);
-  if (!r) return;
-  r.stats.online = true;
-  r.stats.lastSeen = new Date().toISOString();
-  saveState();
-},
+  setRouterOnline(id) {
+    const r = this.getRouter(id);
+    if (!r) return;
+    r.stats.online = true;
+    r.stats.lastSeen = new Date().toISOString();
+    saveState();
+  },
 
-setRouterOffline(id) {
-  const r = this.getRouter(id);
-  if (!r) return;
-  r.stats.online = false;
-  saveState();
-},
+  setRouterOffline(id) {
+    const r = this.getRouter(id);
+    if (!r) return;
+    r.stats.online = false;
+    saveState();
+  },
 
 
 
@@ -1337,5 +1372,40 @@ function cidrWithin(child, parent) {
 function ipToInt(ip) {
   return ip.split('.').reduce((a, b) => (a << 8) + Number(b), 0);
 }
+
+/* ---------------------------------------------------------
+   AUTH MODULE (FRONTEND ONLY)
+--------------------------------------------------------- */
+
+const Auth = {
+  login(username, password) {
+    const user = DB.getUserByUsername(username);
+    if (!user) return null;
+    if (user.password !== password) return null;
+
+    DB.setCurrentUser(user);
+    return DB.getCurrentUser();
+  },
+
+  logout() {
+    DB.setCurrentUser(null);
+  },
+
+  getUser() {
+    return DB.getCurrentUser();
+  },
+
+  isLoggedIn() {
+    return !!DB.getCurrentUser();
+  },
+
+  hasRole(role) {
+    const u = DB.getCurrentUser();
+    if (!u) return false;
+    if (u.role === "admin") return true; // admin can do everything
+    return u.role === role;
+  }
+};
+
 
 console.log("[STATE] State initialized", state);

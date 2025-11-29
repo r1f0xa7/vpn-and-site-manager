@@ -124,6 +124,10 @@ function navigateTo(viewId) {
     return;
   }
 
+  if (!Auth.isLoggedIn() && viewId !== "login") {
+    viewId = "login";
+  }
+
   currentView = viewId;
   saveLS("wg_current_view", viewId);
 
@@ -194,6 +198,10 @@ function renderView(viewId) {
 
     case "logs":
       renderLogs(appViewRoot);
+      break;
+
+    case "login":
+      renderLogin(document.body);
       break;
 
     default:
